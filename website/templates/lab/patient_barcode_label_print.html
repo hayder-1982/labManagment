@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ملصق الباركود - {{ patient.full_name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        @page {
+            size: 10cm 7cm;
+            margin: 0.5cm;
+        }
+        
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none !important; }
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 10px;
+            line-height: 1.2;
+        }
+        
+        .barcode-label {
+            width: 9cm;
+            height: 6cm;
+            border: 1px solid #000;
+            padding: 0.33cm;
+            background: white;
+        }
+        
+        .lab-header h6 {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        
+        .patient-name {
+            font-size: 11px;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 3px;
+        }
+        
+        .patient-details div,
+        .test-info div {
+            font-size: 8px;
+            margin-bottom: 1px;
+        }
+        
+        .test-info h6 {
+            font-size: 9px;
+            color: #000;
+            margin-bottom: 2px;
+        }
+        
+        .test-info ul li {
+            font-size: 7px;
+            margin-bottom: 1px;
+        }
+        
+        .label-footer small {
+            font-size: 6px;
+        }
+        
+        .qr-code img,
+        .linear-barcode img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print text-center mb-3">
+        <button onclick="window.print( )" class="btn btn-primary">
+            <i class="fas fa-print me-1"></i>
+            طباعة
+        </button>
+        <button onclick="window.close()" class="btn btn-secondary">
+            <i class="fas fa-times me-1"></i>
+            إغلاق
+        </button>
+    </div>
+    
+   <div class="barcode-label" style="text-align:center; margin:0; padding: 15px;; font-family:'Segoe UI', Tahoma, Arial, sans-serif; line-height:1;">
+    
+    {% if label_data.linear_barcode %}
+        
+        {# اسم الاختبار #}
+        <h2 style="margin:0; padding:0; font-size:12px; font-weight:bold; white-space:nowrap;">
+            {{ label_data.test_info.individual_tests }} - {{ label_data.test_info.test_groups }}
+        </h2>
+        
+        {# الباركود SVG كبير ومتوسّط #}
+        <div style="display:flex; justify-content:center; align-items:center; margin:5px 0; width:100%;">
+            <div style="width:120%; height:auto;">
+                {{ label_data.linear_barcode|safe }}
+            </div>
+        </div>
+        
+        {# اسم المريض + تاريخ #}
+        <h2 style="margin:0; padding:0; font-size:12px; font-weight:bold; white-space:nowrap;">
+            {{ patient.full_name }} - {{ patient.created_at|date:"Y-m-d H:i" }}
+        </h2>
+        
+    {% endif %}
+</div>
+
+
+
+
+</body>
+</html>
+

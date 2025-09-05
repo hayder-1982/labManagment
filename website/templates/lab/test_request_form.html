@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block title %}طلب تحليل جديد - نظام إدارة المختبرات الطبية{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <div class="card shadow-sm">
+      <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+          <i class="fas fa-plus me-2 text-primary"></i> طلب تحليل جديد
+        </h5>
+      </div>
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <!-- اختيار المريض -->
+          <div class="mb-4 d-flex align-items-end gap-3">
+            <div class="flex-shrink-0" style="width: 250px;">
+              <label for="{{ form.patient.id_for_label }}" class="form-label fw-bold">
+                <i class="fas fa-user me-1 text-secondary"></i> المريض *
+              </label>
+              {{ form.patient }}-{{form.barcode}}
+              {% if form.patient.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.patient.errors %} {{ error }} {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- شريط البحث -->
+            <div class="flex-grow-1">
+              <label class="form-label fw-bold">&nbsp;</label>
+              <input type="text" id="test-search" class="form-control"
+                     placeholder="🔍 ابحث عن تحليل بالاسم أو الوصف..." />
+            </div>
+          </div>
+
+          <!-- التحاليل الفردية -->
+          <div class="mb-4">
+            <h6 class="fw-bold mb-2">
+              <i class="fas fa-flask me-2 text-info"></i> التحاليل الفردية
+            </h6>
+
+            {% regroup form.individual_tests.field.queryset by description|default_if_none:"" as tests_by_description %}
+
+            <div id="tests-container">
+              {% for group in tests_by_description %}
+                <div class="description-group mb-3">
+                  <strong class="text-primary">{{ group.grouper }}</strong>
+                  <hr class="my-1">
+                  <div class="chips-container">
+                    {% for test in group.list %}
+                      <label class="test-chip" data-checkbox="test_{{ test.id }}">
+                        <input type="checkbox" class="d-none test-checkbox"
+                               name="individual_tests" value="{{ test.id }}"
+                               data-price="{{ test.price }}" id="test_{{ test.id }}">
+                        {{ test.name }}
+                      </label>
+                    {% endfor %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- مجموعات التحاليل -->
+          <div class="mb-4">
+            <h6 class="fw-bold mb-2">
+              <i class="fas fa-layer-group me-2 text-success"></i> مجموعات التحاليل
+            </h6>
+            <div id="groups-container" class="chips-container">
+              {% for group in form.test_groups.field.queryset %}
+                <label class="test-chip" data-checkbox="group_{{ group.id }}">
+                  <input type="checkbox" class="d-none group-checkbox"
+                         name="test_groups" value="{{ group.id }}"
+                         data-price="{{ group.total_price }}" id="group_{{ group.id }}">
+                  {{ group.name }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- ملاحظات -->
+          <div class="mb-4">
+            <label for="{{ form.notes.id_for_label }}" class="form-label fw-bold">
+              <i class="fas fa-sticky-note me-1 text-warning"></i> ملاحظات إضافية
+            </label>
+            {{ form.notes }}
+          </div>
+
+          <!-- ملخص الأسعار -->
+          <div class="mb-4">
+            <div class="price-summary-card">
+              <h6 class="fw-bold mb-3">
+                <i class="fas fa-calculator me-2 text-primary"></i> ملخص التكلفة
+              </h6>
+              <div id="price-breakdown">
+                <div class="price-item">
+                  <span>التحاليل الفردية:</span>
+                  <span id="individual-total">0 ريال</span>
+                </div>
+                <div class="price-item">
+                  <span>مجموعات التحاليل:</span>
+                  <span id="groups-total">0 ريال</span>
+                </div>
+                <hr />
+                <div class="price-item total">
+                  <span><strong>الإجمالي:</strong></span>
+                  <span id="grand-total"><strong>0 ريال</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- الأزرار -->
+          <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save me-1"></i> إنشاء الطلب
+            </button>
+            <a href="{% url 'test_request_list' %}" class="btn btn-outline-secondary">
+              <i class="fas fa-arrow-right me-1"></i> العودة للقائمة
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CSS -->
+<style>
+/* صندوق رئيسي للتحاليل */
+#tests-container {
+  max-height: 450px;       /* أقصى ارتفاع لكل التحاليل */
+  overflow-y: auto;        /* تمرير عمودي عند الحاجة */
+  padding: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+/* كل مجموعة وصف */
+.description-group {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 8px;
+  max-height: 160px;       /* أقصى ارتفاع لكل مجموعة */
+  overflow-y: auto;        /* تمرير داخلي */
+}
+
+/* الحاوية الداخلية */
+.chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+}
+
+/* شكل الاختيار (chip) */
+.test-chip {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 50px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: 0.2s;
+  white-space: nowrap;
+}
+.test-chip.selected {
+  background-color: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+/* كرت الأسعار */
+.price-summary-card {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  padding: 20px;
+}
+.price-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.price-item.total { font-size: 1.1rem; color: #667eea; }
+</style>
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const chips = document.querySelectorAll(".test-chip");
+  const individualTotalEl = document.getElementById("individual-total");
+  const groupsTotalEl = document.getElementById("groups-total");
+  const grandTotalEl = document.getElementById("grand-total");
+
+  function updatePrices() {
+    let individualTotal = 0;
+    let groupsTotal = 0;
+    document.querySelectorAll(".test-checkbox").forEach(cb => {
+      if (cb.checked) individualTotal += parseFloat(cb.dataset.price);
+    });
+    document.querySelectorAll(".group-checkbox").forEach(cb => {
+      if (cb.checked) groupsTotal += parseFloat(cb.dataset.price);
+    });
+    individualTotalEl.textContent = individualTotal + " ريال";
+    groupsTotalEl.textContent = groupsTotal + " ريال";
+    grandTotalEl.innerHTML = "<strong>" + (individualTotal + groupsTotal) + " ريال</strong>";
+  }
+
+  // تفعيل الاختيار عند الضغط على الكرت
+  chips.forEach(chip => {
+    chip.addEventListener("click", () => {
+      const checkbox = document.getElementById(chip.dataset.checkbox);
+      checkbox.checked = !checkbox.checked;
+      chip.classList.toggle("selected", checkbox.checked);
+      updatePrices();
+    });
+  });
+
+  // البحث
+  document.getElementById("test-search").addEventListener("input", function () {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll("#tests-container .description-group").forEach(group => {
+      const text = group.querySelector("strong").textContent.toLowerCase();
+      let anyVisible = false;
+      group.querySelectorAll(".test-chip").forEach(chip => {
+        const chipText = chip.textContent.toLowerCase();
+        const show = chipText.includes(q) || text.includes(q);
+        chip.style.display = show ? "inline-block" : "none";
+        if (show) anyVisible = true;
+      });
+      group.style.display = anyVisible ? "block" : "none";
+    });
+  });
+
+  updatePrices();
+});
+</script>
+{% endblock %}
+{% endblock %}

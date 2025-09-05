@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ patient.full_name }} - تفاصيل المريض{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-user me-2"></i>
+        تفاصيل المريض
+    </h1>
+    <div>
+        <a href="{% url 'patient_report' patient.id %}" class="btn btn-info me-2">
+            <i class="fas fa-file-medical me-1"></i>
+            تقرير النتائج
+        </a>
+        <a href="{% url 'patient_report_print' patient.id %}" target="_blank" class="btn btn-primary me-2">
+            <i class="fas fa-print me-1"></i>
+            طباعة التقرير
+        </a>
+        <a href="{% url 'patient_edit' patient.id %}" class="btn btn-warning me-2">
+            <i class="fas fa-edit me-1"></i>
+            تعديل البيانات
+        </a>
+        <a href="{% url 'test_request_create' %}?patient={{ patient.id }}" class="btn btn-success">
+            <i class="fas fa-vial me-1"></i>
+            طلب تحليل جديد
+        </a>
+        <!-- إضافة في قسم الأزرار -->
+        <a href="{% url 'patient_barcode_label' patient.id %}" class="btn btn-info">
+            <i class="fas fa-qrcode me-1"></i>
+            ملصق الباركود
+        </a>
+
+    </div>
+</div>
+
+<div class="row">
+    <!-- بيانات المريض -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-id-card me-2"></i>
+                    البيانات الشخصية
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="avatar-large mx-auto mb-3">
+                        {% if patient.gender == 'M' %}
+                            <i class="fas fa-male fa-3x"></i>
+                        {% else %}
+                            <i class="fas fa-female fa-3x"></i>
+                        {% endif %}
+                    </div>
+                    <h4 class="mb-1">{{ patient.full_name }}</h4>
+                    <p class="text-muted">{{ patient.national_id }}</p>
+                </div>
+                
+                <div class="patient-info">
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="fas fa-calendar me-2"></i>
+                            العمر
+                        </div>
+                        <div class="info-value">{{ patient.age }} سنة</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="fas fa-venus-mars me-2"></i>
+                            الجنس
+                        </div>
+                        <div class="info-value">
+                            {% if patient.gender == 'M' %}
+                                <span class="badge bg-primary">ذكر</span>
+                            {% else %}
+                                <span class="badge bg-pink">أنثى</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="fas fa-birthday-cake me-2"></i>
+                            تاريخ الميلاد
+                        </div>
+                        <div class="info-value">{{ patient.date_of_birth|date:"Y/m/d" }}</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="fas fa-phone me-2"></i>
+                            رقم الهاتف
+                        </div>
+                        <div class="info-value">
+                            <a href="tel:{{ patient.phone_number }}" class="text-decoration-none">
+                                {{ patient.phone_number }}
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            العنوان
+                        </div>
+                        <div class="info-value">{{ patient.address }}</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="fas fa-clock me-2"></i>
+                            تاريخ التسجيل
+                        </div>
+                        <div class="info-value">
+                            {{ patient.created_at|date:"Y/m/d H:i" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- تاريخ التحاليل -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    تاريخ التحاليل
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if test_requests %}
+                    <div class="timeline">
+                        {% for request in test_requests %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker">
+                                {% if request.status == 'completed' %}
+                                    <i class="fas fa-check-circle text-success"></i>
+                                {% elif request.status == 'pending' %}
+                                    <i class="fas fa-clock text-warning"></i>
+                                {% elif request.status == 'in_progress' %}
+                                    <i class="fas fa-spinner text-info"></i>
+                                {% else %}
+                                    <i class="fas fa-times-circle text-danger"></i>
+                                {% endif %}
+                            </div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-1">
+                                        طلب تحليل - {{ request.request_date|date:"Y/m/d" }}
+                                    </h6>
+                                    <div>
+                                        {% if request.status == 'pending' %}
+                                            <span class="badge bg-warning">قيد الانتظار</span>
+                                        {% elif request.status == 'in_progress' %}
+                                            <span class="badge bg-info">قيد التنفيذ</span>
+                                        {% elif request.status == 'completed' %}
+                                            <span class="badge bg-success">مكتمل</span>
+                                        {% elif request.status == 'cancelled' %}
+                                            <span class="badge bg-danger">ملغي</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>
+                                        {{ request.request_date|time:"H:i" }}
+                                    </small>
+                                </div>
+                                
+                                <!-- التحاليل المطلوبة -->
+                                <div class="mb-3">
+                                    {% if request.individual_tests.all %}
+                                        <div class="mb-2">
+                                            <strong>التحاليل الفردية:</strong>
+                                            <div class="mt-1">
+                                                {% for test in request.individual_tests.all %}
+                                                    <span class="badge bg-light text-dark me-1">{{ test.name }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if request.test_groups.all %}
+                                        <div class="mb-2">
+                                            <strong>مجموعات التحاليل:</strong>
+                                            <div class="mt-1">
+                                                {% for group in request.test_groups.all %}
+                                                    <span class="badge bg-secondary me-1">{{ group.name }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong class="text-primary">
+                                            السعر الإجمالي: {{ request.get_total_price }} ريال
+                                        </strong>
+                                    </div>
+                                    <div>
+                                        <a href="{% url 'test_request_detail' request.id %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye me-1"></i>
+                                            عرض التفاصيل
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                {% if request.notes %}
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-sticky-note me-1"></i>
+                                            {{ request.notes }}
+                                        </small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-vial fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">لا توجد تحاليل سابقة</h5>
+                        <p class="text-muted">لم يتم طلب أي تحاليل لهذا المريض حتى الآن</p>
+                        <a href="{% url 'test_request_create' %}?patient={{ patient.id }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>
+                            طلب تحليل جديد
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- زر العودة -->
+<div class="mt-4">
+    <a href="{% url 'patient_list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-1"></i>
+        العودة لقائمة المرضى
+    </a>
+</div>
+
+<style>
+.avatar-large {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.patient-info .info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.patient-info .info-item:last-child {
+    border-bottom: none;
+}
+
+.patient-info .info-label {
+    font-weight: 500;
+    color: #6c757d;
+}
+
+.patient-info .info-value {
+    font-weight: 600;
+    color: #495057;
+}
+
+.timeline {
+    position: relative;
+    padding-right: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    right: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #667eea, #764ba2);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    right: -22px;
+    top: 5px;
+    width: 30px;
+    height: 30px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.timeline-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-right: 20px;
+}
+
+.bg-pink {
+    background-color: #e91e63 !important;
+}
+</style>
+{% endblock %}
+

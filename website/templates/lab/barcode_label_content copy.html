@@ -1,0 +1,78 @@
+<!-- محتوى الملصق المشترك -->
+<div class="barcode-label">
+    <!-- هيدر المختبر -->
+    <div class="lab-header text-center mb-3">
+        <h6 class="mb-1">مختبر الشفاء الطبي</h6>
+        <small class="text-muted">Tel: 966-11-1234567 | Email: info@shifa-lab.com</small>
+    </div>
+    
+    <div class="row">
+        <!-- معلومات المريض -->
+        <div class="col-8">
+            <div class="patient-info">
+                <h6 class="patient-name">{{ patient.full_name }}</h6>
+                <div class="patient-details">
+                    <div><strong>الهوية:</strong> {{ patient.national_id }}</div>
+                    <div><strong>العمر:</strong> {{ patient.age }} سنة</div>
+                    <div><strong>الجنس:</strong> {{ patient.get_gender_display }}</div>
+                    <div><strong>الهاتف:</strong> {{ patient.phone_number }}</div>
+                </div>
+            </div>
+            
+            {% if label_data.test_info %}
+            <div class="test-info mt-3">
+                <h6 class="text-primary">معلومات التحليل</h6>
+                <div><strong>رقم الطلب:</strong> {{ label_data.test_info.request_id|slice:":8" }}...</div>
+                <div><strong>التاريخ:</strong> {{ label_data.test_info.request_date }}</div>
+                <div><strong>الحالة:</strong> {{ label_data.test_info.status }}</div>
+                
+                {% if label_data.test_info.individual_tests %}
+                <div class="mt-2">
+                    <strong>التحاليل الفردية:</strong>
+                    <ul class="list-unstyled mb-0">
+                        {% for test in label_data.test_info.individual_tests %}
+                        <li>• {{ test }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                {% if label_data.test_info.test_groups %}
+                <div class="mt-2">
+                    <strong>مجموعات التحاليل:</strong>
+                    <ul class="list-unstyled mb-0">
+                        {% for group in label_data.test_info.test_groups %}
+                        <li>• {{ group }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- الباركود -->
+        <div class="col-4 text-center">
+            {% if label_data.qr_code %}
+            <div class="qr-code mb-2">
+                <img src="data:image/png;base64,{{ label_data.qr_code }}" 
+                     alt="QR Code" style="width: 80px; height: 80px;">
+            </div>
+            {% endif %}
+            
+            {% if label_data.linear_barcode %}
+            <div class="linear-barcode">
+                <img src="data:image/png;base64,{{ label_data.linear_barcode }}" 
+                     alt="Barcode" style="width: 100px; height: 30px;">
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- فوتر -->
+    <div class="label-footer text-center mt-3 pt-2 border-top">
+        <small class="text-muted">
+            تم الإنشاء: {{ label_data.generated_at }}
+        </small>
+    </div>
+</div>

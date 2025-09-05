@@ -1,0 +1,439 @@
+{% extends 'base.html' %}
+
+{% block title %}التقارير والإحصائيات - نظام إدارة المختبرات الطبية{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-chart-bar me-2"></i>
+        التقارير والإحصائيات
+    </h1>
+    <div>
+        <button class="btn btn-outline-primary" onclick="window.print()">
+            <i class="fas fa-print me-1"></i>
+            طباعة التقرير
+        </button>
+    </div>
+</div>
+
+<!-- الإحصائيات العامة -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-number">{{ total_patients }}</div>
+                    <div class="stats-label">إجمالي المرضى</div>
+                </div>
+                <div class="stats-icon">
+                    <i class="fas fa-users fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-number">{{ total_requests }}</div>
+                    <div class="stats-label">إجمالي الطلبات</div>
+                </div>
+                <div class="stats-icon">
+                    <i class="fas fa-clipboard-list fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #333;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-number">
+                        {% for stat in status_stats %}
+                            {% if stat.status == 'pending' %}{{ stat.count }}{% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="stats-label">قيد الانتظار</div>
+                </div>
+                <div class="stats-icon">
+                    <i class="fas fa-clock fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #333;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-number">
+                        {% for stat in status_stats %}
+                            {% if stat.status == 'completed' %}{{ stat.count }}{% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="stats-label">مكتملة</div>
+                </div>
+                <div class="stats-icon">
+                    <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- إحصائيات الحالات -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-pie-chart me-2"></i>
+                    توزيع طلبات التحاليل حسب الحالة
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="statusChart" width="400" height="200"></canvas>
+                </div>
+                
+                <div class="status-legend mt-3">
+                    {% for stat in status_stats %}
+                    <div class="legend-item">
+                        <span class="legend-color status-{{ stat.status }}"></span>
+                        <span class="legend-label">
+                            {% if stat.status == 'pending' %}قيد الانتظار
+                            {% elif stat.status == 'in_progress' %}قيد التنفيذ
+                            {% elif stat.status == 'completed' %}مكتملة
+                            {% elif stat.status == 'cancelled' %}ملغية
+                            {% endif %}
+                        </span>
+                        <span class="legend-value">{{ stat.count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- أكثر التحاليل طلباً -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-trophy me-2"></i>
+                    أكثر التحاليل طلباً
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if popular_tests %}
+                    <div class="popular-tests-list">
+                        {% for test in popular_tests %}
+                        <div class="popular-test-item">
+                            <div class="test-rank">{{ forloop.counter }}</div>
+                            <div class="test-details">
+                                <div class="test-name">{{ test.name }}</div>
+                                <div class="test-stats">
+                                    <span class="test-count">{{ test.request_count }} طلب</span>
+                                    <span class="test-price">{{ test.price }} ريال</span>
+                                </div>
+                            </div>
+                            <div class="test-progress">
+                                <div class="progress">
+                                    <div class="progress-bar" style="width: {% widthratio test.request_count popular_tests.0.request_count 100 %}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">لا توجد بيانات كافية</h6>
+                        <p class="text-muted">ابدأ بإضافة طلبات تحاليل لعرض الإحصائيات</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- تقارير مفصلة -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-file-alt me-2"></i>
+                    تقارير مفصلة
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="report-card">
+                            <div class="report-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="report-content">
+                                <h6>تقرير المرضى</h6>
+                                <p>قائمة شاملة بجميع المرضى المسجلين</p>
+                                <a href="{% url 'patient_list' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>
+                                    عرض التقرير
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="report-card">
+                            <div class="report-icon">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                            <div class="report-content">
+                                <h6>تقرير طلبات التحاليل</h6>
+                                <p>جميع طلبات التحاليل مع تفاصيلها</p>
+                                <a href="{% url 'test_request_list' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>
+                                    عرض التقرير
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="report-card">
+                            <div class="report-icon">
+                                <i class="fas fa-vial"></i>
+                            </div>
+                            <div class="report-content">
+                                <h6>تقرير التحاليل</h6>
+                                <p>قائمة التحاليل المتاحة وأسعارها</p>
+                                <a href="{% url 'test_list' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>
+                                    عرض التقرير
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+}
+
+.stats-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.stats-label {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.chart-container {
+    position: relative;
+    height: 200px;
+}
+
+.status-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+.legend-color.status-pending { background-color: #ffc107; }
+.legend-color.status-in_progress { background-color: #17a2b8; }
+.legend-color.status-completed { background-color: #28a745; }
+.legend-color.status-cancelled { background-color: #dc3545; }
+
+.popular-tests-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.popular-test-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.popular-test-item:last-child {
+    border-bottom: none;
+}
+
+.test-rank {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-left: 15px;
+}
+
+.test-details {
+    flex: 1;
+    margin-left: 15px;
+}
+
+.test-name {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 5px;
+}
+
+.test-stats {
+    display: flex;
+    gap: 15px;
+}
+
+.test-count {
+    color: #667eea;
+    font-weight: 600;
+}
+
+.test-price {
+    color: #6c757d;
+}
+
+.test-progress {
+    width: 100px;
+}
+
+.progress {
+    height: 8px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+}
+
+.progress-bar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.report-card {
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.report-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border-color: #667eea;
+}
+
+.report-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 1.5rem;
+}
+
+.report-content h6 {
+    margin-bottom: 10px;
+    color: #495057;
+}
+
+.report-content p {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+@media print {
+    .btn, .card-header {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+</style>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // رسم بياني للحالات
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    
+    const statusData = [
+        {% for stat in status_stats %}
+        {
+            label: '{% if stat.status == "pending" %}قيد الانتظار{% elif stat.status == "in_progress" %}قيد التنفيذ{% elif stat.status == "completed" %}مكتملة{% elif stat.status == "cancelled" %}ملغية{% endif %}',
+            value: {{ stat.count }},
+            color: '{% if stat.status == "pending" %}#ffc107{% elif stat.status == "in_progress" %}#17a2b8{% elif stat.status == "completed" %}#28a745{% elif stat.status == "cancelled" %}#dc3545{% endif %}'
+        },
+        {% endfor %}
+    ];
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: statusData.map(item => item.label),
+            datasets: [{
+                data: statusData.map(item => item.value),
+                backgroundColor: statusData.map(item => item.color),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}
+

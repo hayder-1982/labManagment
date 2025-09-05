@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>تقرير نتائج التحاليل الطبية - {{ patient.full_name }}</title>
+<style>
+body {
+    font-family: "Times New Roman", Times, serif;
+    direction: rtl;
+    color: #000;
+    background: #fff;
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 6px;
+    text-align: center;
+    font-size: 13px;
+    border: none; /* بدون حدود */
+}
+
+/* عنوان المجموعة */
+.group-header {
+    font-weight: bold;
+    text-align: right;
+    background: #f2f2f2; /* رمادي فاتح للطباعة */
+    -webkit-print-color-adjust: exact;
+}
+
+/* الهيدر */
+.print-header {
+    text-align: center;
+    padding: 5px;
+    border-bottom: 1px solid #000;
+}
+.print-header .logo {
+    font-size: 18px;
+    font-weight: 700;
+    color: #000;
+}
+.print-header .lab-info {
+    font-size: 11px;
+    color: #000;
+}
+.print-header .report-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #000;
+}
+
+/* بيانات المريض */
+.patient-info {
+    font-size: 11px;
+    border: 1px solid #000;
+    padding: 5px;
+    margin-top: 5px;
+}
+.patient-info .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+}
+.info-item { display: flex; gap: 4px; }
+
+/* الفوتر */
+.print-footer {
+    text-align: center;
+    font-size: 11px;
+    color: #000;
+    border-top: 1px solid #000;
+    padding-top: 3px;
+    margin-top: 10px;
+}
+.signature-section {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 5px;
+}
+.signature-box {
+    text-align: center;
+    border: 1px solid #000;
+    padding: 4px;
+    font-size: 10px;
+    width: 40%;
+}
+.signature-title {
+    font-weight: bold;
+}
+.signature-line {
+    border-top: 1px solid #000;
+    margin-top: 10px;
+    font-size: 9px;
+    padding-top: 2px;
+}
+.container {
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 10px;
+    background: white;
+}
+
+/* الطباعة */
+@media print {
+    @page {
+        size: A4;
+        margin: 2cm 1.5cm;
+    }
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
+
+    /* منع تقسيم المجموعات */
+    .group-block { page-break-inside: avoid; break-inside: avoid; }
+
+    /* ألوان الحالات تتحول لدرجات رمادي للطباعة */
+    .status-normal { font-weight: bold; }
+    .status-high { font-weight: bold; text-decoration: underline; }
+    .status-low { font-weight: bold; font-style: italic; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<table>
+    <thead>
+        <tr>
+            <th colspan="6">
+                <div class="print-header">
+                    <div class="logo">🏥 مختبر التحاليل الطبية</div>
+                    <div class="lab-info">العنوان: شارع الملك فهد، الرياض | الهاتف: 011-1234567 | البريد الإلكتروني: info@medlab.com</div>
+                    <div class="report-title">تقرير نتائج التحاليل الطبية</div>
+                </div>
+                <div class="patient-info">
+                 <div class="info-grid">
+                        <div class="info-item"><span>اسم المريض:</span> <span>{{ patient.full_name }}</span></div>
+                        <div class="info-item"><span>العمر:</span> <span>{{ patient.age }} سنة</span></div>
+                        <div class="info-item"><span>الجنس:</span> <span>{{ patient.get_gender_display }}</span></div>
+                        <div class="info-item"><span>رقم الهوية:</span> <span>{{ patient.national_id }}</span></div>
+                        <div class="info-item"><span>رقم الهاتف:</span> <span>{{ patient.phone_number }}</span></div>
+                        <div class="info-item"><span>تاريخ التقرير:</span> <span>{{ report_date|date:"Y/m/d H:i" }}</span></div>
+                    </div>
+                </div>
+            </th>
+        </tr>
+        <tr style="border-bottom:1px solid #000;">
+            <th>تاريخ النتيجة</th>
+            <th>المعدل الطبيعي</th>
+            <th>الحالة</th>
+            <th>الوحدة</th>
+            <th>النتيجة</th>
+            <th>اسم التحليل</th>
+        </tr>
+    </thead>
+
+    {% for group_name, results in results_by_group.items %}
+    <tbody class="group-block">
+        <tr class="group-header">
+            <td colspan="6">📋 {{ group_name }}</td>
+        </tr>
+        {% for result in results %}
+        <tr>
+            <td>{{ result.result_date|date:"Y/m/d" }}</td>
+            <td>{{ result.normal_range }}</td>
+            <td>
+                {% if result.status == 'normal' %}
+                    <span class="status-normal">طبيعي</span>
+                {% elif result.status == 'high' %}
+                    <span class="status-high">مرتفع</span>
+                {% elif result.status == 'low' %}
+                    <span class="status-low">منخفض</span>
+                {% endif %}
+            </td>
+            <td>{{ result.unit }}</td>
+            <td><strong>{{ result.result_value }}</strong></td>
+            <td>{{ result.test_name }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    {% endfor %}
+
+    <tfoot>
+        <tr>
+            <td colspan="6">
+                <div class="signature-section">
+                    <div class="signature-box">
+                        <div class="signature-title">توقيع الطبيب المختص</div>
+                        <div class="signature-line">التوقيع والختم</div>
+                    </div>
+                    <div class="signature-box">
+                        <div class="signature-title">توقيع مدير المختبر</div>
+                        <div class="signature-line">التوقيع والختم</div>
+                    </div>
+                </div>
+                <div class="print-footer">
+                    هذا التقرير صادر من مختبر التحاليل الطبية ومعتمد من وزارة الصحة — تم الإنشاء بتاريخ: {{ report_date|date:"Y/m/d H:i" }}
+                </div>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+</div>
+</body>
+</html>

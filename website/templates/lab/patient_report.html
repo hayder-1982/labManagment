@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}تقرير نتائج المريض - {{ patient.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-file-medical text-primary me-2"></i>
+                        تقرير نتائج المريض
+                    </h4>
+                    <div>
+                        <a href="{% url 'patient_report_print' patient.id %}" target="_blank" class="btn btn-primary me-2">
+                            <i class="fas fa-print me-1"></i>
+                            طباعة التقرير
+                        </a>
+                        <a href="{% url 'patient_detail' patient.id %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-right me-1"></i>
+                            العودة
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- معلومات المريض -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">
+                                        <i class="fas fa-user me-2"></i>
+                                        معلومات المريض
+                                    </h5>
+                                    <table class="table table-borderless mb-0">
+                                        <tr>
+                                            <td><strong>الاسم:</strong></td>
+                                            <td>{{ patient.full_name }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>العمر:</strong></td>
+                                            <td>{{ patient.age }} سنة</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>الجنس:</strong></td>
+                                            <td>{{ patient.get_gender_display }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>رقم الهوية:</strong></td>
+                                            <td>{{ patient.national_id }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>رقم الهاتف:</strong></td>
+                                            <td>{{ patient.phone_number }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title text-info">
+                                        <i class="fas fa-chart-line me-2"></i>
+                                        إحصائيات التحاليل
+                                    </h5>
+                                    <table class="table table-borderless mb-0">
+                                        <tr>
+                                            <td><strong>عدد الطلبات:</strong></td>
+                                            <td>{{ test_requests.count }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>عدد المجموعات:</strong></td>
+                                            <td>{{ results_by_group|length }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>تاريخ التقرير:</strong></td>
+                                            <td>{{ report_date|date:"Y/m/d H:i" }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- النتائج مقسمة حسب المجموعة -->
+                    {% if results_by_group %}
+                        <div class="row">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-flask me-2"></i>
+                                    نتائج التحاليل
+                                </h5>
+                                
+                                {% for group_name, results in results_by_group.items %}
+                                    <div class="card mb-4">
+                                        <div class="card-header bg-primary text-white">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-layer-group me-2"></i>
+                                                {{ group_name }}
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-striped">
+                                                    <thead class="table-dark">
+                                                        <tr>
+                                                            <th>اسم التحليل</th>
+                                                            <th>النتيجة</th>
+                                                            <th>الوحدة</th>
+                                                            <th>المعدل الطبيعي</th>
+                                                            <th>الحالة</th>
+                                                            <th>تاريخ النتيجة</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for result in results %}
+                                                            <tr>
+                                                                <td>{{ result.test_name }}</td>
+                                                                <td><strong>{{ result.result_value }}</strong></td>
+                                                                <td>{{ result.unit }}</td>
+                                                                <td>{{ result.normal_range }}</td>
+                                                                <td>
+                                                                    {% if result.status == 'normal' %}
+                                                                        <span class="badge bg-success">طبيعي</span>
+                                                                    {% elif result.status == 'high' %}
+                                                                        <span class="badge bg-danger">مرتفع</span>
+                                                                    {% elif result.status == 'low' %}
+                                                                        <span class="badge bg-warning">منخفض</span>
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td>{{ result.result_date|date:"Y/m/d H:i" }}</td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle me-2"></i>
+                            لا توجد نتائج تحاليل لهذا المريض حتى الآن
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

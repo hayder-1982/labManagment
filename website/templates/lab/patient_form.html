@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if patient %}تعديل المريض{% else %}إضافة مريض جديد{% endif %} - نظام إدارة المختبرات الطبية
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    {% if patient %}
+                        <i class="fas fa-user-edit me-2"></i>
+                        تعديل بيانات المريض: {{ patient.full_name }}
+                    {% else %}
+                        <i class="fas fa-user-plus me-2"></i>
+                        إضافة مريض جديد
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <!-- الاسم الكامل -->
+                        <div class="col-md-12 mb-3">
+                            <label for="{{ form.full_name.id_for_label }}" class="form-label">
+                                <i class="fas fa-user me-1"></i>
+                                الاسم الكامل *
+                            </label>
+                            {{ form.full_name }}-{{from.barc}}
+                            {% if form.full_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.full_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- رقم الهوية -->
+                        <!-- <div class="col-md-6 mb-3">
+                            <label for="{{ form.national_id.id_for_label }}" class="form-label">
+                                <i class="fas fa-id-card me-1"></i>
+                                رقم الهوية *
+                            </label>
+                            {{ form.national_id }}
+                            {% if form.national_id.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.national_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div> -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.age.id_for_label }}" class="form-label">
+                                <i class="fas fa-id-card me-1"></i>
+                                العمر *
+                            </label>
+                            {{ form.age }}
+                            {% if form.age.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.age.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>                  
+                        <!-- تاريخ الميلاد -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">
+                                <i class="fas fa-calendar me-1"></i>
+                                تاريخ الميلاد *
+                            </label>
+                            {{ form.date_of_birth }}
+                            {% if form.date_of_birth.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.date_of_birth.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- الجنس -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.gender.id_for_label }}" class="form-label">
+                                <i class="fas fa-venus-mars me-1"></i>
+                                الجنس *
+                            </label>
+                            {{ form.gender }}
+                            {% if form.gender.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.gender.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- رقم الهاتف -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.phone_number.id_for_label }}" class="form-label">
+                                <i class="fas fa-phone me-1"></i>
+                                رقم الهاتف *
+                            </label>
+                            {{ form.phone_number }}
+                            {% if form.phone_number.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.phone_number.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- العنوان -->
+                        <div class="col-md-12 mb-3">
+                            <label for="{{ form.address.id_for_label }}" class="form-label">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                العنوان *
+                            </label>
+                            {{ form.address }}
+                            {% if form.address.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.address.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- أزرار الإجراءات -->
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                {% if patient %}تحديث البيانات{% else %}حفظ المريض{% endif %}
+                            </button>
+                            {% if patient %}
+                                <a href="{% url 'patient_detail' patient.id %}" class="btn btn-outline-secondary ms-2">
+                                    <i class="fas fa-eye me-1"></i>
+                                    عرض التفاصيل
+                                </a>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <a href="{% url 'patient_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-right me-1"></i>
+                                العودة للقائمة
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- معلومات إضافية -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="fas fa-info-circle me-2"></i>
+                    ملاحظات مهمة
+                </h6>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        جميع الحقول المميزة بـ (*) مطلوبة
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        رقم الهوية يجب أن يكون فريداً لكل مريض
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        تأكد من صحة رقم الهاتف للتواصل مع المريض
+                    </li>
+                    <li>
+                        <i class="fas fa-check text-success me-2"></i>
+                        يمكن تعديل هذه البيانات لاحقاً عند الحاجة
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control:invalid {
+    border-color: #dc3545;
+}
+
+.form-control:valid {
+    border-color: #28a745;
+}
+
+.card {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تحسين تجربة المستخدم للنماذج
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input, select, textarea');
+    
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            if (this.value.trim() !== '') {
+                this.classList.add('is-valid');
+                this.classList.remove('is-invalid');
+            }
+        });
+        
+        input.addEventListener('input', function() {
+            if (this.classList.contains('is-invalid')) {
+                this.classList.remove('is-invalid');
+            }
+        });
+    });
+    
+    // التحقق من صحة رقم الهوية
+    const nationalIdInput = document.getElementById('{{ form.national_id.id_for_label }}');
+    if (nationalIdInput) {
+        nationalIdInput.addEventListener('input', function() {
+            const value = this.value;
+            if (value && !/^\d+$/.test(value)) {
+                this.setCustomValidity('رقم الهوية يجب أن يحتوي على أرقام فقط');
+            } else if (value && value.length < 10) {
+                this.setCustomValidity('رقم الهوية يجب أن يكون 10 أرقام على الأقل');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}
+
