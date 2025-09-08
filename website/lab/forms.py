@@ -149,6 +149,7 @@ class BulkIndividualTestResultForm(forms.Form):
         return saved_results
 
 class BulkTestGroupResultForm(forms.Form):
+    
     """نموذج لإدخال نتائج مجموعات التحاليل دفعة واحدة"""
     
     def __init__(self, test_request, *args, **kwargs):
@@ -162,6 +163,7 @@ class BulkTestGroupResultForm(forms.Form):
         existing_individual_results = {
             result.individual_test.id: result 
             for result in IndividualTestResult.objects.filter(test_request=test_request)
+                
         }
         
         # إنشاء حقول لكل تحليل في كل مجموعة
@@ -264,6 +266,6 @@ class BulkTestGroupResultForm(forms.Form):
                     result.save()
                 
                 saved_results.append(result)
-        
+                print(saved_results)
         return saved_results
 

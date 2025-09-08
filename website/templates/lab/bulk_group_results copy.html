@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% load lab_filters %}
+
+{% block title %}إدخال نتائج مجموعات التحاليل - نظام إدارة المختبرات الطبية{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-layer-group me-2"></i>
+        إدخال نتائج مجموعات التحاليل دفعة واحدة
+    </h1>
+    <div>
+        <a href="{% url 'test_request_detail' test_request.id %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-1"></i>
+            العودة لتفاصيل الطلب
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user me-2"></i>
+                    معلومات المريض
+                </h5>
+            </div>
+            <div class="card-body">
+                <p><strong>الاسم:</strong> {{ test_request.patient.full_name }}</p>
+                <p><strong>رقم الهوية:</strong> {{ test_request.patient.national_id }}</p>
+                <p><strong>العمر:</strong> {{ test_request.patient.age }} سنة</p>
+                <p><strong>الجنس:</strong> {{ test_request.patient.get_gender_display }}</p>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    معلومات الطلب
+                </h5>
+            </div>
+            <div class="card-body">
+                <p><strong>رقم الطلب:</strong> #{{ test_request.id|stringformat:"s"|slice:":8" }}</p>
+                <p><strong>تاريخ الطلب:</strong> {{ test_request.request_date|date:"Y/m/d" }}</p>
+                <p><strong>الحالة:</strong> 
+                    {% if test_request.status == 'pending' %}
+                        <span class="badge bg-warning text-dark">قيد الانتظار</span>
+                    {% elif test_request.status == 'in_progress' %}
+                        <span class="badge bg-info text-dark">قيد التنفيذ</span>
+                    {% elif test_request.status == 'completed' %}
+                        <span class="badge bg-success">مكتملة</span>
+                    {% elif test_request.status == 'cancelled' %}
+                        <span class="badge bg-danger">ملغية</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-edit me-2"></i>
+                    إدخال نتائج مجموعات التحاليل
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if form.get_group_fields %}
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="alert alert-info mb-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>تعليمات:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>أدخل القيم للتحاليل التي تريد حفظ نتائجها</li>
+                                <li>يمكنك ترك التحاليل فارغة إذا لم تكن النتائج جاهزة بعد</li>
+                                <li>سيتم تحديد حالة النتيجة (طبيعي/مرتفع/منخفض) تلقائياً بناءً على القيم الطبيعية</li>
+                                <li>التحاليل مجمعة حسب المجموعات لسهولة الإدخال</li>
+                            </ul>
+                        </div>
+
+                        {% for group_field in form.get_group_fields %}
+                        <div class="card mb-4 border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-layer-group me-2"></i>
+                                    {{ group_field.group.name }}
+                                </h5>
+                                <small>{{ group_field.group.description }}</small>
+                            </div>
+                            <div class="card-body">
+                                {% for test_field in group_field.tests %}
+                                <div class="card mb-3 border-light">
+                                    <div class="card-header py-2 bg-light">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-vial me-2"></i>
+                                            {{ test_field.test.name }}
+                                            {% if test_field.existing_result %}
+                                                <span class="badge bg-info ms-2">محدث مسبقاً</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary ms-2">جديد</span>
+                                            {% endif %}
+                                        </h6>
+                                        <small class="text-muted">
+                                            القيم الطبيعية: {{ test_field.test.normal_value_min }} - {{ test_field.test.normal_value_max }} {{ test_field.test.unit }}
+                                        </small>
+                                    </div>
+                                    <div class="card-body py-3">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <label for="{{ test_field.value_field.id_for_label }}" class="form-label">
+                                                    القيمة ({{ test_field.test.unit }})
+                                                </label>
+                                                {{ test_field.value_field }}
+                                                {% if test_field.value_field.errors %}
+                                                    <div class="text-danger small mt-1">
+                                                        {{ test_field.value_field.errors }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-md-8">
+                                                <label for="{{ test_field.notes_field.id_for_label }}" class="form-label">
+                                                    ملاحظات
+                                                </label>
+                                                {{ test_field.notes_field }}
+                                                {% if test_field.notes_field.errors %}
+                                                    <div class="text-danger small mt-1">
+                                                        {{ test_field.notes_field.errors }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        {% if test_field.existing_result %}
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-history me-1"></i>
+                                                آخر تحديث: {{ test_field.existing_result.result_date|date:"Y/m/d H:i" }}
+                                                بواسطة {{ test_field.existing_result.entered_by.username }}
+                                            </small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'test_request_detail' test_request.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>
+                                إلغاء
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-1"></i>
+                                حفظ جميع النتائج
+                            </button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="alert alert-warning text-center">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        لا توجد مجموعات تحاليل مرتبطة بهذا الطلب.
+                    </div>
+                    <div class="text-center">
+                        <a href="{% url 'test_request_detail' test_request.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-right me-1"></i>
+                            العودة لتفاصيل الطلب
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // إضافة تحقق من صحة القيم المدخلة
+    const valueInputs = document.querySelectorAll('input[type="number"]');
+    
+    valueInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            const value = parseFloat(this.value);
+            const card = this.closest('.card.border-light');
+            const cardHeader = card.querySelector('.card-header h6');
+            
+            // إزالة الشارات السابقة
+            const existingBadges = cardHeader.querySelectorAll('.status-badge');
+            existingBadges.forEach(badge => badge.remove());
+            
+            if (!isNaN(value) && this.value.trim() !== '') {
+                // استخراج القيم الطبيعية من النص
+                const normalRangeText = card.querySelector('.text-muted').textContent;
+                const rangeMatch = normalRangeText.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/);
+                
+                if (rangeMatch) {
+                    const minValue = parseFloat(rangeMatch[1]);
+                    const maxValue = parseFloat(rangeMatch[2]);
+                    
+                    let statusBadge = document.createElement('span');
+                    statusBadge.className = 'badge ms-2 status-badge';
+                    
+                    if (value < minValue) {
+                        statusBadge.className += ' bg-warning text-dark';
+                        statusBadge.textContent = 'منخفض';
+                    } else if (value > maxValue) {
+                        statusBadge.className += ' bg-danger';
+                        statusBadge.textContent = 'مرتفع';
+                    } else {
+                        statusBadge.className += ' bg-success';
+                        statusBadge.textContent = 'طبيعي';
+                    }
+                    
+                    cardHeader.appendChild(statusBadge);
+                }
+            }
+        });
+    });
+    
+    // إضافة وظيفة طي/فتح المجموعات
+    const groupHeaders = document.querySelectorAll('.card.border-primary .card-header');
+    groupHeaders.forEach(header => {
+        header.style.cursor = 'pointer';
+        header.addEventListener('click', function() {
+            const cardBody = this.nextElementSibling;
+            if (cardBody.style.display === 'none') {
+                cardBody.style.display = 'block';
+                this.querySelector('i').className = 'fas fa-layer-group me-2';
+            } else {
+                cardBody.style.display = 'none';
+                this.querySelector('i').className = 'fas fa-chevron-down me-2';
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}
+

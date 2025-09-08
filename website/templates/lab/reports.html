@@ -16,6 +16,23 @@
     </div>
 </div>
 
+<!-- فلترة حسب التاريخ -->
+<form method="get" class="row g-3 mb-4">
+    <div class="col-md-4">
+        <label for="start_date" class="form-label">من تاريخ</label>
+        <input type="date" id="start_date" name="start_date" value="{{ request.GET.start_date }}" class="form-control">
+    </div>
+    <div class="col-md-4">
+        <label for="end_date" class="form-label">إلى تاريخ</label>
+        <input type="date" id="end_date" name="end_date" value="{{ request.GET.end_date }}" class="form-control">
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-filter me-1"></i> عرض الإحصائيات
+        </button>
+    </div>
+</form>
+
 <!-- الإحصائيات العامة -->
 <div class="row mb-4">
     <div class="col-lg-3 col-md-6 mb-3">
@@ -159,246 +176,10 @@
     </div>
 </div>
 
-<!-- تقارير مفصلة -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-file-alt me-2"></i>
-                    تقارير مفصلة
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <div class="report-card">
-                            <div class="report-icon">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <div class="report-content">
-                                <h6>تقرير المرضى</h6>
-                                <p>قائمة شاملة بجميع المرضى المسجلين</p>
-                                <a href="{% url 'patient_list' %}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye me-1"></i>
-                                    عرض التقرير
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-4 mb-3">
-                        <div class="report-card">
-                            <div class="report-icon">
-                                <i class="fas fa-clipboard-list"></i>
-                            </div>
-                            <div class="report-content">
-                                <h6>تقرير طلبات التحاليل</h6>
-                                <p>جميع طلبات التحاليل مع تفاصيلها</p>
-                                <a href="{% url 'test_request_list' %}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye me-1"></i>
-                                    عرض التقرير
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-4 mb-3">
-                        <div class="report-card">
-                            <div class="report-icon">
-                                <i class="fas fa-vial"></i>
-                            </div>
-                            <div class="report-content">
-                                <h6>تقرير التحاليل</h6>
-                                <p>قائمة التحاليل المتاحة وأسعارها</p>
-                                <a href="{% url 'test_list' %}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye me-1"></i>
-                                    عرض التقرير
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<style>
-.stats-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 15px;
-    padding: 25px;
-    margin-bottom: 20px;
-}
-
-.stats-number {
-    font-size: 2.5rem;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.stats-label {
-    font-size: 1.1rem;
-    opacity: 0.9;
-}
-
-.chart-container {
-    position: relative;
-    height: 200px;
-}
-
-.status-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.legend-color {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-}
-
-.legend-color.status-pending { background-color: #ffc107; }
-.legend-color.status-in_progress { background-color: #17a2b8; }
-.legend-color.status-completed { background-color: #28a745; }
-.legend-color.status-cancelled { background-color: #dc3545; }
-
-.popular-tests-list {
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-.popular-test-item {
-    display: flex;
-    align-items: center;
-    padding: 15px 0;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.popular-test-item:last-child {
-    border-bottom: none;
-}
-
-.test-rank {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    margin-left: 15px;
-}
-
-.test-details {
-    flex: 1;
-    margin-left: 15px;
-}
-
-.test-name {
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 5px;
-}
-
-.test-stats {
-    display: flex;
-    gap: 15px;
-}
-
-.test-count {
-    color: #667eea;
-    font-weight: 600;
-}
-
-.test-price {
-    color: #6c757d;
-}
-
-.test-progress {
-    width: 100px;
-}
-
-.progress {
-    height: 8px;
-    background-color: #f0f0f0;
-    border-radius: 4px;
-}
-
-.progress-bar {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.3s ease;
-}
-
-.report-card {
-    border: 1px solid #e9ecef;
-    border-radius: 10px;
-    padding: 20px;
-    text-align: center;
-    transition: all 0.3s ease;
-    height: 100%;
-}
-
-.report-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    border-color: #667eea;
-}
-
-.report-icon {
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 15px;
-    font-size: 1.5rem;
-}
-
-.report-content h6 {
-    margin-bottom: 10px;
-    color: #495057;
-}
-
-.report-content p {
-    color: #6c757d;
-    font-size: 0.9rem;
-    margin-bottom: 15px;
-}
-
-@media print {
-    .btn, .card-header {
-        display: none !important;
-    }
-    
-    .card {
-        border: none !important;
-        box-shadow: none !important;
-    }
-}
-</style>
-
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // رسم بياني للحالات
     const ctx = document.getElementById('statusChart').getContext('2d');
     
     const statusData = [
@@ -426,9 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    display: false
-                }
+                legend: { display: false }
             }
         }
     });
@@ -436,4 +215,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 {% endblock %}
 {% endblock %}
-

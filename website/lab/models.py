@@ -8,6 +8,7 @@ import uuid
 import random
 from datetime import datetime
 from datetime import date
+from django.utils import timezone
 from django.core.exceptions import ValidationError
 
 class Patient(models.Model):
@@ -150,7 +151,8 @@ class TestRequest(models.Model):
     
     # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     id = models.AutoField(primary_key=True)
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, verbose_name='المريض')
+    #patient = models.ForeignKey(Patient, on_delete=models.CASCADE, verbose_name='المريض')
+    patient = models.ForeignKey(Patient,to_field='barcode', on_delete=models.CASCADE, verbose_name='المريض') # ✅ يربط عن طريق حقل barcode بدلاً من id
     individual_tests = models.ManyToManyField(IndividualTest, blank=True, verbose_name='التحاليل الفردية')
     test_groups = models.ManyToManyField(TestGroup, blank=True, verbose_name='مجموعات التحاليل')
     request_date = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ الطلب')
@@ -237,7 +239,7 @@ class IndividualTestResult(models.Model):
     test_request = models.ForeignKey(TestRequest, on_delete=models.CASCADE, verbose_name='طلب التحليل')
     individual_test = models.ForeignKey(IndividualTest, on_delete=models.CASCADE, verbose_name='التحليل')
     value = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='القيمة')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, verbose_name='الحالة')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES,blank=True, verbose_name='الحالة')
     result_date = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ النتيجة')
     notes = models.TextField(blank=True, verbose_name='ملاحظات')
     entered_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='أدخل بواسطة')
@@ -303,8 +305,6 @@ class TestGroupResult(models.Model):
             self.test_request.check_completion_status()
 
 
-
-
 class PrintedReport(models.Model):
     """نموذج لتتبع التقارير المطبوعة"""
     # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -323,3 +323,24 @@ class PrintedReport(models.Model):
     def __str__(self):
         return f"تقرير {self.patient.full_name} - {self.printed_at.strftime('%Y-%m-%d %H:%M')}"
 
+
+
+
+class DeviceResult(models.Model):
+    device_name = models.CharField(max_length=200, verbose_name="اسم الجهاز")
+    barcode = models.ForeignKey(Patient, to_field='barcode', on_delete=models.CASCADE, verbose_name='المريض')
+    test = models.ForeignKey(IndividualTest, on_delete=models.CASCADE, verbose_name='التحليل')
+    result = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="نتيجة التحليل")
+    insert_datetime = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ النتيجة')
+    is_active = models.BooleanField(default=True, verbose_name="نشط")  # ✅ العمود البولين الجديد
+    
+    class Meta:
+        verbose_name = "نتيجة جهاز"
+        verbose_name_plural = "نتائج الأجهزة"
+        ordering = ["-insert_datetime"]
+        constraints = [
+            models.UniqueConstraint(fields=['barcode', 'test'], name='unique_device_barcode_test')
+        ]
+
+    def __str__(self):
+        return f"{self.device_name} - {self.barcode.barcode} - {self.test.name} - {self.result} - {'نشط' if self.is_active else 'غير نشط'}"

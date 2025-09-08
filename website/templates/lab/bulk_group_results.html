@@ -1,201 +1,412 @@
 {% extends 'base.html' %}
 {% load lab_filters %}
+{% load static %}
 
 {% block title %}إدخال نتائج مجموعات التحاليل - نظام إدارة المختبرات الطبية{% endblock %}
 
+{% block extra_css %}
+<style>
+:root {
+    --primary-color: #4e73df;
+    --secondary-color: #6f42c1;
+    --success-color: #1cc88a;
+    --info-color: #36b9cc;
+    --warning-color: #f6c23e;
+    --danger-color: #e74a3b;
+    --light-bg: #f8f9fc;
+}
+
+body {
+    background-color: #f8f9fc;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 2rem 0 rgba(58, 59, 69, 0.2);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    border-bottom: 1px solid #e3e6f0;
+    border-radius: 10px 10px 0 0 !important;
+    background-color: #fff;
+}
+
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.form-control {
+    border-radius: 6px;
+    border: 1px solid #d1d3e2;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+.badge {
+    font-weight: 500;
+    border-radius: 4px;
+}
+
+.test-card {
+    border-left: 4px solid #4e73df;
+    transition: all 0.2s ease;
+}
+
+.test-card:hover {
+    border-left-color: var(--secondary-color);
+}
+
+.group-card {
+    border-top: 3px solid var(--primary-color);
+}
+
+.group-header {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.group-header:hover {
+    background-color: rgba(78, 115, 223, 0.05);
+}
+
+.collapse-icon {
+    transition: transform 0.3s ease;
+}
+
+.collapsed .collapse-icon {
+    transform: rotate(-90deg);
+}
+
+.value-input {
+    position: relative;
+}
+
+.value-status {
+    position: absolute;
+    right: 10px;
+    top: 38px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.animated-fadeIn {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.smooth-transition {
+    transition: all 0.3s ease;
+}
+
+.instructions {
+    border-left: 4px solid var(--info-color);
+    background: linear-gradient(to right, rgba(54, 185, 204, 0.1), transparent);
+}
+
+/* تخصيص شريط التمرير للمجموعات */
+.group-body {
+    max-height: 1000px;
+    overflow: hidden;
+    transition: max-height 0.5s ease;
+}
+
+.group-body.collapsed {
+    max-height: 0;
+}
+
+/* تنسيق الأزرار */
+.btn-success {
+    background: linear-gradient(to right, var(--success-color), #17a673);
+    border: none;
+}
+
+.btn-primary {
+    background: linear-gradient(to right, var(--primary-color), #2e59d9);
+    border: none;
+}
+
+.btn-outline-secondary {
+    border-color: #d1d3e2;
+}
+
+/* تأثيرات للبطاقات */
+.hover-lift {
+    transition: all 0.2s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1.5rem rgba(58, 59, 69, 0.2);
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">
-        <i class="fas fa-layer-group me-2"></i>
-        إدخال نتائج مجموعات التحاليل دفعة واحدة
-    </h1>
-    <div>
-        <a href="{% url 'test_request_detail' test_request.id %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-right me-1"></i>
-            العودة لتفاصيل الطلب
-        </a>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-lg-4 mb-4">
-        <div class="card shadow-sm">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-user me-2"></i>
-                    معلومات المريض
-                </h5>
-            </div>
-            <div class="card-body">
-                <p><strong>الاسم:</strong> {{ test_request.patient.full_name }}</p>
-                <p><strong>رقم الهوية:</strong> {{ test_request.patient.national_id }}</p>
-                <p><strong>العمر:</strong> {{ test_request.patient.age }} سنة</p>
-                <p><strong>الجنس:</strong> {{ test_request.patient.get_gender_display }}</p>
-            </div>
-        </div>
-        
-        <div class="card shadow-sm mt-3">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-info-circle me-2"></i>
-                    معلومات الطلب
-                </h5>
-            </div>
-            <div class="card-body">
-                <p><strong>رقم الطلب:</strong> #{{ test_request.id|stringformat:"s"|slice:":8" }}</p>
-                <p><strong>تاريخ الطلب:</strong> {{ test_request.request_date|date:"Y/m/d" }}</p>
-                <p><strong>الحالة:</strong> 
-                    {% if test_request.status == 'pending' %}
-                        <span class="badge bg-warning text-dark">قيد الانتظار</span>
-                    {% elif test_request.status == 'in_progress' %}
-                        <span class="badge bg-info text-dark">قيد التنفيذ</span>
-                    {% elif test_request.status == 'completed' %}
-                        <span class="badge bg-success">مكتملة</span>
-                    {% elif test_request.status == 'cancelled' %}
-                        <span class="badge bg-danger">ملغية</span>
-                    {% endif %}
-                </p>
-            </div>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4 animated-fadeIn">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-layer-group text-primary me-2"></i>
+            إدخال نتائج مجموعات التحاليل دفعة واحدة
+        </h1>
+        <div>
+            <a href="{% url 'test_request_detail' test_request.id %}" class="btn btn-outline-secondary hover-lift">
+                <i class="fas fa-arrow-right me-1"></i>
+                العودة لتفاصيل الطلب
+            </a>
         </div>
     </div>
 
-    <div class="col-lg-8">
-        <div class="card shadow-sm">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-edit me-2"></i>
-                    إدخال نتائج مجموعات التحاليل
-                </h5>
-            </div>
-            <div class="card-body">
-                {% if form.get_group_fields %}
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="alert alert-info mb-4">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>تعليمات:</strong>
-                            <ul class="mb-0 mt-2">
-                                <li>أدخل القيم للتحاليل التي تريد حفظ نتائجها</li>
-                                <li>يمكنك ترك التحاليل فارغة إذا لم تكن النتائج جاهزة بعد</li>
-                                <li>سيتم تحديد حالة النتيجة (طبيعي/مرتفع/منخفض) تلقائياً بناءً على القيم الطبيعية</li>
-                                <li>التحاليل مجمعة حسب المجموعات لسهولة الإدخال</li>
-                            </ul>
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm hover-lift mb-4">
+                <div class="card-header py-3">
+                    <h5 class="card-title mb-0 text-primary">
+                        <i class="fas fa-user me-2"></i>
+                        معلومات المريض
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary p-3 rounded-circle me-3">
+                            <i class="fas fa-user-injured text-white"></i>
                         </div>
-
-                        {% for group_field in form.get_group_fields %}
-                        <div class="card mb-4 border-primary">
-                            <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0">
-                                    <i class="fas fa-layer-group me-2"></i>
-                                    {{ group_field.group.name }}
-                                </h5>
-                                <small>{{ group_field.group.description }}</small>
+                        <div>
+                            <h6 class="mb-0">{{ test_request.patient.full_name }}</h6>
+                            <small class="text-muted">رقم الهوية: {{ test_request.patient.national_id }}</small>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <div class="border-start border-primary ps-3">
+                                <small class="text-muted d-block">العمر</small>
+                                <strong>{{ test_request.patient.age }} سنة</strong>
                             </div>
-                            <div class="card-body">
-                                {% for test_field in group_field.tests %}
-                                <div class="card mb-3 border-light">
-                                    <div class="card-header py-2 bg-light">
-                                        <h6 class="mb-0">
-                                            <i class="fas fa-vial me-2"></i>
-                                            {{ test_field.test.name }}
-                                            {% if test_field.existing_result %}
-                                                <span class="badge bg-info ms-2">محدث مسبقاً</span>
-                                            {% else %}
-                                                <span class="badge bg-secondary ms-2">جديد</span>
-                                            {% endif %}
-                                        </h6>
-                                        <small class="text-muted">
-                                            القيم الطبيعية: {{ test_field.test.normal_value_min }} - {{ test_field.test.normal_value_max }} {{ test_field.test.unit }}
-                                        </small>
+                        </div>
+                        <div class="col-6">
+                            <div class="border-start border-primary ps-3">
+                                <small class="text-muted d-block">الجنس</small>
+                                <strong>{{ test_request.patient.get_gender_display }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm hover-lift">
+                <div class="card-header py-3">
+                    <h5 class="card-title mb-0 text-primary">
+                        <i class="fas fa-info-circle me-2"></i>
+                        معلومات الطلب
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-info p-3 rounded-circle me-3">
+                            <i class="fas fa-clipboard-list text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">طلب #{{ test_request.id|stringformat:"s"|slice:":8" }}</h6>
+                            <small class="text-muted">تاريخ: {{ test_request.request_date|date:"Y/m/d" }}</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <small class="text-muted d-block">الحالة</small>
+                        {% if test_request.status == 'pending' %}
+                            <span class="badge bg-warning text-dark py-2 px-3 mt-1">قيد الانتظار</span>
+                        {% elif test_request.status == 'in_progress' %}
+                            <span class="badge bg-info text-dark py-2 px-3 mt-1">قيد التنفيذ</span>
+                        {% elif test_request.status == 'completed' %}
+                            <span class="badge bg-success py-2 px-3 mt-1">مكتملة</span>
+                        {% elif test_request.status == 'cancelled' %}
+                            <span class="badge bg-danger py-2 px-3 mt-1">ملغية</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header py-3">
+                    <h5 class="card-title mb-0 text-primary">
+                        <i class="fas fa-edit me-2"></i>
+                        إدخال نتائج مجموعات التحاليل
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if form.get_group_fields %}
+                        <form method="post" id="resultsForm">
+                            {% csrf_token %}
+                            
+                            <div class="alert alert-info instructions mb-4">
+                                <div class="d-flex">
+                                    <div class="me-3">
+                                        <i class="fas fa-info-circle fa-2x text-info"></i>
                                     </div>
-                                    <div class="card-body py-3">
-                                        <div class="row">
-                                            <div class="col-md-4">
-                                                <label for="{{ test_field.value_field.id_for_label }}" class="form-label">
-                                                    القيمة ({{ test_field.test.unit }})
-                                                </label>
-                                                {{ test_field.value_field }}
-                                                {% if test_field.value_field.errors %}
-                                                    <div class="text-danger small mt-1">
-                                                        {{ test_field.value_field.errors }}
-                                                    </div>
-                                                {% endif %}
-                                            </div>
-                                            <div class="col-md-8">
-                                                <label for="{{ test_field.notes_field.id_for_label }}" class="form-label">
-                                                    ملاحظات
-                                                </label>
-                                                {{ test_field.notes_field }}
-                                                {% if test_field.notes_field.errors %}
-                                                    <div class="text-danger small mt-1">
-                                                        {{ test_field.notes_field.errors }}
-                                                    </div>
-                                                {% endif %}
+                                    <div>
+                                        <h6 class="alert-heading mb-2">تعليمات الإدخال</h6>
+                                        <ul class="mb-0 ps-3">
+                                            <li>أدخل القيم للتحاليل التي تريد حفظ نتائجها</li>
+                                            <li>يمكنك ترك التحاليل فارغة إذا لم تكن النتائج جاهزة بعد</li>
+                                            <li>سيتم تحديد حالة النتيجة (طبيعي/مرتفع/منخفض) تلقائياً بناءً على القيم الطبيعية</li>
+                                            <li>التحاليل مجمعة حسب المجموعات لسهولة الإدخال</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion" id="groupsAccordion">
+                                {% for group_field in form.get_group_fields %}
+                                <div class="card group-card mb-3 animated-fadeIn" style="animation-delay: {{ forloop.counter0|add:1|multiply:0.1 }}s;">
+                                    <div class="card-header group-header py-3" id="heading{{ forloop.counter }}" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="true" aria-controls="collapse{{ forloop.counter }}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-layer-group me-2 text-primary"></i>
+                                                {{ group_field.group.name }}
+                                            </h6>
+                                            <div>
+                                                <small class="text-muted me-2">{{ group_field.tests|length }} تحليل</small>
+                                                <i class="fas fa-chevron-down collapse-icon"></i>
                                             </div>
                                         </div>
-                                        
-                                        {% if test_field.existing_result %}
-                                        <div class="mt-2">
-                                            <small class="text-muted">
-                                                <i class="fas fa-history me-1"></i>
-                                                آخر تحديث: {{ test_field.existing_result.result_date|date:"Y/m/d H:i" }}
-                                                بواسطة {{ test_field.existing_result.entered_by.username }}
-                                            </small>
+                                        <small class="text-muted">{{ group_field.group.description }}</small>
+                                    </div>
+                                    
+                                    <div id="collapse{{ forloop.counter }}" class="collapse show" aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#groupsAccordion">
+                                        <div class="card-body">
+                                            {% for test_field in group_field.tests %}
+                                            <div class="card test-card mb-3 smooth-transition">
+                                                <div class="card-header py-2 bg-light">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <h6 class="mb-0">
+                                                            <i class="fas fa-vial me-2 text-secondary"></i>
+                                                            {{ test_field.test.name }}
+                                                        </h6>
+                                                        {% if test_field.existing_result %}
+                                                            <span class="badge bg-info">محدث مسبقاً</span>
+                                                        {% else %}
+                                                            <span class="badge bg-secondary">جديد</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <small class="text-muted">
+                                                        القيم الطبيعية: {{ test_field.test.normal_value_min }} - {{ test_field.test.normal_value_max }} {{ test_field.test.unit }}
+                                                    </small>
+                                                </div>
+                                                <div class="card-body py-3">
+                                                    <div class="row">
+                                                        <div class="col-md-5">
+                                                            <div class="value-input">
+                                                                <label for="{{ test_field.value_field.id_for_label }}" class="form-label">
+                                                                    القيمة ({{ test_field.test.unit }})
+                                                                </label>
+                                                                {{ test_field.value_field }}
+                                                                <div class="value-status" id="status-{{ test_field.test.id }}"></div>
+                                                                {% if test_field.value_field.errors %}
+                                                                    <div class="text-danger small mt-1">
+                                                                        {{ test_field.value_field.errors }}
+                                                                    </div>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-7">
+                                                            <label for="{{ test_field.notes_field.id_for_label }}" class="form-label">
+                                                                ملاحظات
+                                                            </label>
+                                                            {{ test_field.notes_field }}
+                                                            {% if test_field.notes_field.errors %}
+                                                                <div class="text-danger small mt-1">
+                                                                    {{ test_field.notes_field.errors }}
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {% if test_field.existing_result %}
+                                                    <div class="mt-2 p-2 bg-light rounded">
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-history me-1"></i>
+                                                            آخر تحديث: {{ test_field.existing_result.result_date|date:"Y/m/d H:i" }}
+                                                            بواسطة {{ test_field.existing_result.entered_by.username }}
+                                                        </small>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            {% endfor %}
                                         </div>
-                                        {% endif %}
                                     </div>
                                 </div>
                                 {% endfor %}
                             </div>
-                        </div>
-                        {% endfor %}
 
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'test_request_detail' test_request.id %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-times me-1"></i>
-                                إلغاء
-                            </a>
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-save me-1"></i>
-                                حفظ جميع النتائج
-                            </button>
+                            <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                                <a href="{% url 'test_request_detail' test_request.id %}" class="btn btn-outline-secondary hover-lift">
+                                    <i class="fas fa-times me-1"></i>
+                                    إلغاء
+                                </a>
+                                <button type="submit" class="btn btn-success hover-lift">
+                                    <i class="fas fa-save me-1"></i>
+                                    حفظ جميع النتائج
+                                </button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning text-center py-4">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                            <h5>لا توجد مجموعات تحاليل مرتبطة بهذا الطلب.</h5>
+                            <div class="text-center mt-3">
+                                <a href="{% url 'test_request_detail' test_request.id %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-right me-1"></i>
+                                    العودة لتفاصيل الطلب
+                                </a>
+                            </div>
                         </div>
-                    </form>
-                {% else %}
-                    <div class="alert alert-warning text-center">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        لا توجد مجموعات تحاليل مرتبطة بهذا الطلب.
-                    </div>
-                    <div class="text-center">
-                        <a href="{% url 'test_request_detail' test_request.id %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-right me-1"></i>
-                            العودة لتفاصيل الطلب
-                        </a>
-                    </div>
-                {% endif %}
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // إضافة تحقق من صحة القيم المدخلة
+    // إضافة تحقق من صحة القيم المدخلة وتحديث الحالة
     const valueInputs = document.querySelectorAll('input[type="number"]');
     
     valueInputs.forEach(input => {
         input.addEventListener('input', function() {
             const value = parseFloat(this.value);
-            const card = this.closest('.card.border-light');
-            const cardHeader = card.querySelector('.card-header h6');
-            
-            // إزالة الشارات السابقة
-            const existingBadges = cardHeader.querySelectorAll('.status-badge');
-            existingBadges.forEach(badge => badge.remove());
+            const testId = this.id.split('_')[1];
+            const statusElement = document.getElementById('status-' + testId);
             
             if (!isNaN(value) && this.value.trim() !== '') {
                 // استخراج القيم الطبيعية من النص
+                const card = this.closest('.test-card');
                 const normalRangeText = card.querySelector('.text-muted').textContent;
                 const rangeMatch = normalRangeText.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/);
                 
@@ -203,43 +414,64 @@ document.addEventListener('DOMContentLoaded', function() {
                     const minValue = parseFloat(rangeMatch[1]);
                     const maxValue = parseFloat(rangeMatch[2]);
                     
-                    let statusBadge = document.createElement('span');
-                    statusBadge.className = 'badge ms-2 status-badge';
-                    
+                    // تحديث حالة القيمة
                     if (value < minValue) {
-                        statusBadge.className += ' bg-warning text-dark';
-                        statusBadge.textContent = 'منخفض';
+                        statusElement.className = 'value-status text-warning';
+                        statusElement.innerHTML = '<i class="fas fa-arrow-down me-1"></i>منخفض';
                     } else if (value > maxValue) {
-                        statusBadge.className += ' bg-danger';
-                        statusBadge.textContent = 'مرتفع';
+                        statusElement.className = 'value-status text-danger';
+                        statusElement.innerHTML = '<i class="fas fa-arrow-up me-1"></i>مرتفع';
                     } else {
-                        statusBadge.className += ' bg-success';
-                        statusBadge.textContent = 'طبيعي';
+                        statusElement.className = 'value-status text-success';
+                        statusElement.innerHTML = '<i class="fas fa-check me-1"></i>طبيعي';
                     }
-                    
-                    cardHeader.appendChild(statusBadge);
                 }
+            } else {
+                // إذا كانت القيمة فارغة، إخفاء حالة القيمة
+                statusElement.className = 'value-status';
+                statusElement.innerHTML = '';
             }
         });
+        
+        // تشغيل حدث الإدخال لتهيئة الحالة للقيم الموجودة مسبقًا
+        if (input.value) {
+            input.dispatchEvent(new Event('input'));
+        }
     });
     
-    // إضافة وظيفة طي/فتح المجموعات
-    const groupHeaders = document.querySelectorAll('.card.border-primary .card-header');
-    groupHeaders.forEach(header => {
-        header.style.cursor = 'pointer';
-        header.addEventListener('click', function() {
-            const cardBody = this.nextElementSibling;
-            if (cardBody.style.display === 'none') {
-                cardBody.style.display = 'block';
-                this.querySelector('i').className = 'fas fa-layer-group me-2';
-            } else {
-                cardBody.style.display = 'none';
-                this.querySelector('i').className = 'fas fa-chevron-down me-2';
+    // إضافة تأثيرات للبطاقات عند التمرير
+    const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = 1;
+                entry.target.style.transform = 'translateY(0)';
             }
         });
+    }, observerOptions);
+    
+    // مراقبة عناصر البطاقات لإضافة تأثيرات الظهور
+    document.querySelectorAll('.animated-fadeIn').forEach(el => {
+        el.style.opacity = 0;
+        el.style.transform = 'translateY(20px)';
+        el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.observe(el);
     });
+    
+    // إضافة تأثيرات لطيفة عند تقديم النموذج
+    const form = document.getElementById('resultsForm');
+    if (form) {
+        form.addEventListener('submit', function() {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> جاري الحفظ...';
+            submitBtn.disabled = true;
+        });
+    }
 });
 </script>
-
 {% endblock %}
-

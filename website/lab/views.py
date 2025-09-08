@@ -6,7 +6,7 @@ from django.db.models import Q, Count, Sum
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.utils import timezone
-from .models import Patient, IndividualTest, TestGroup, TestRequest, IndividualTestResult, TestGroupResult
+from .models import Patient, IndividualTest, TestGroup, TestRequest, IndividualTestResult, TestGroupResult,DeviceResult
 from .forms import PatientForm, TestRequestForm, IndividualTestResultForm, BulkIndividualTestResultForm, BulkTestGroupResultForm
 
 def home(request):
@@ -191,10 +191,8 @@ def add_test_result(request, request_id, test_id):
     individual_test = get_object_or_404(IndividualTest, id=test_id)
     
     # التحقق من وجود النتيجة مسبقاً
-    existing_result = IndividualTestResult.objects.filter(
-        test_request=test_request,
-        individual_test=individual_test
-    ).first()
+    existing_result = IndividualTestResult.objects.filter(test_request=test_request,
+        individual_test=individual_test).first()
     
     if request.method == 'POST':
         form = IndividualTestResultForm(request.POST, instance=existing_result)
@@ -241,28 +239,41 @@ def search_patients_ajax(request):
     return JsonResponse({'results': patients})
 
 @login_required
+
 def reports(request):
-    """صفحة التقارير"""
+    """صفحة التقارير مع إمكانية التصفية بين تاريخين"""
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    # الطلبات
+    queryset = TestRequest.objects.all()
+
+    if start_date and end_date:
+        queryset = queryset.filter(request_date__date__range=[start_date, end_date])
+
     # إحصائيات عامة
-    total_patients = Patient.objects.count()
-    total_requests = TestRequest.objects.count()
+    total_patients = queryset.values("patient").distinct().count()
+    total_requests = queryset.count()
     
     # إحصائيات حسب الحالة
-    status_stats = TestRequest.objects.values('status').annotate(count=Count('id'))
+    status_stats = queryset.values('status').annotate(count=Count('id'))
     
-    # أكثر التحاليل طلباً
-    popular_tests = IndividualTest.objects.annotate(
-        request_count=Count('testrequest')
-    ).order_by('-request_count')[:10]
+    # أكثر التحاليل طلباً ✅ حسب الفترة
+    popular_tests = (
+        IndividualTest.objects.filter(individualtestresult__test_request__in=queryset)
+        .annotate(request_count=Count('individualtestresult'))
+        .order_by('-request_count')[:10]
+    )
     
     context = {
         'total_patients': total_patients,
         'total_requests': total_requests,
         'status_stats': status_stats,
         'popular_tests': popular_tests,
+        'start_date': start_date,
+        'end_date': end_date,
     }
     return render(request, 'lab/reports.html', context)
-
 
 
 @login_required
@@ -304,7 +315,7 @@ def test_request_delete(request, request_id):
 def bulk_individual_results(request, request_id):
     """إدخال نتائج التحاليل الفردية دفعة واحدة"""
     test_request = get_object_or_404(TestRequest, id=request_id)
-    
+    print('bulk_individual_results',test_request)
     if request.method == 'POST':
         form = BulkIndividualTestResultForm(test_request, request.POST)
         if form.is_valid():
@@ -367,7 +378,7 @@ def patient_report(request, patient_id):
     for result in individual_results:
         # استخدام الوصف كمفتاح التجميع، أو اسم التحليل إذا لم يكن هناك وصف
         group_key = result.individual_test.description.strip() if result.individual_test.description.strip() else result.individual_test.name
-        
+        # print(group_key)
         if group_key not in results_by_description:
             results_by_description[group_key] = []
         results_by_description[group_key].append({
@@ -383,7 +394,7 @@ def patient_report(request, patient_id):
     # إضافة نتائج المجموعات
     for result in group_results:
         group_key = result.test_group.description.strip() if result.test_group.description.strip() else result.test_group.name
-        
+
         if group_key not in results_by_description:
             results_by_description[group_key] = []
         # نحتاج إلى جلب النتائج الفردية لهذه المجموعة
@@ -416,32 +427,32 @@ def patient_report_print(request, patient_id):
     patient = get_object_or_404(Patient, id=patient_id)
     
     # تسجيل الطباعة
-    PrintedReport.objects.create(
-        patient=patient,
-        printed_by=request.user,
-        report_type='patient_report'
-    )
+    PrintedReport.objects.create(patient=patient, printed_by=request.user, report_type='patient_report')
     
     # جلب جميع طلبات التحاليل للمريض
     test_requests = TestRequest.objects.filter(patient=patient).order_by('-request_date')
     
     # جلب جميع النتائج الفردية للمريض
     individual_results = IndividualTestResult.objects.filter(
-        test_request__patient=patient
-    ).select_related('individual_test', 'test_request').order_by('-result_date')
-    print('individual_results',individual_results)
+        test_request__patient=patient).select_related('individual_test', 'test_request').order_by('-result_date')
+
     # جلب جميع نتائج المجموعات للمريض
     group_results = TestGroupResult.objects.filter(
-        test_request__patient=patient
-    ).select_related('test_group', 'test_request').order_by('-result_date')
-    print('group_results',group_results)
+        test_request__patient=patient).select_related('test_group', 'test_request').order_by('-result_date')
     # تنظيم النتائج حسب الوصف (description)
     results_by_description = {}
     
     # إضافة النتائج الفردية
     for result in individual_results:
         # استخدام الوصف كمفتاح التجميع، أو اسم التحليل إذا لم يكن هناك وصف
-        group_key = result.individual_test.description.strip() if result.individual_test.description.strip() else result.individual_test.name
+        # group_key = result.individual_test.description.strip() if result.individual_test.description.strip() else result.individual_test.name
+        group_key = (
+        result.individual_test.subclass.strip() 
+        if result.individual_test.subclass.strip() 
+        else result.individual_test.description.strip() 
+        if result.individual_test.description.strip() 
+        else result.individual_test.name
+        )
         if group_key not in results_by_description:
             results_by_description[group_key] = []
         results_by_description[group_key].append({
@@ -663,4 +674,3 @@ def generate_patient_barcode_label_data(patient, test_request=None):
         'test_info': test_info,
         'generated_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
     }
-

@@ -4,202 +4,273 @@
 {% block title %}تفاصيل طلب التحليل - نظام إدارة المختبرات الطبية{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">
-        <i class="fas fa-file-alt me-2"></i>
-        تفاصيل طلب التحليل #{{ test_request.id|stringformat:"s"|slice:":8" }}
-    </h1>
-    <div>
-        <a href="{% url 'test_request_update' test_request.id %}" class="btn btn-warning me-2">
-            <i class="fas fa-edit me-1"></i>
-            تعديل الطلب
-        </a>
-        {% if test_request.individual_tests.all %}
-        <a href="{% url 'bulk_individual_results' test_request.id %}" class="btn btn-success me-2">
-            <i class="fas fa-flask me-1"></i>
-            إدخال نتائج التحاليل الفردية
-        </a>
-        {% endif %}
-        {% if test_request.test_groups.all %}
-        <a href="{% url 'bulk_group_results' test_request.id %}" class="btn btn-info me-2">
-            <i class="fas fa-layer-group me-1"></i>
-            إدخال نتائج المجموعات
-        </a>
-        {% endif %}
-        <a href="{% url 'test_request_list' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-right me-1"></i>
-            العودة لقائمة الطلبات
-        </a>
-        <!-- إضافة في قسم الأزرار -->
-        <a href="{% url 'test_request_barcode_label' test_request.id %}" class="btn btn-info">
-            <i class="fas fa-qrcode me-1"></i>
-            ملصق الباركود
-        </a>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-lg-6 mb-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-user me-2"></i>
-                    معلومات المريض
-                </h5>
-            </div>
-            <div class="card-body">
-                <p><strong>الاسم الكامل:</strong> <a href="{% url 'patient_detail' test_request.patient.id %}">{{ test_request.patient.full_name }}</a></p>
-                <p><strong>رقم الهوية:</strong> {{ test_request.patient.national_id }}</p>
-                <p><strong>تاريخ الميلاد:</strong> {{ test_request.patient.date_of_birth|date:"Y/m/d" }} ({{ test_request.patient.age }} سنة)</p>
-                <p><strong>الجنس:</strong> {{ test_request.patient.get_gender_display }}</p>
-                <p><strong>رقم الهاتف:</strong> {{ test_request.patient.phone_number }}</p>
-                <p><strong>العنوان:</strong> {{ test_request.patient.address }}</p>
-            </div>
+<div class="container-fluid">
+    <!-- رأس الصفحة -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 text-primary">
+                <i class="fas fa-file-medical-alt me-2"></i>
+                تفاصيل طلب التحليل
+            </h1>
+            <p class="text-muted mb-0">رقم الطلب: #{{ test_request.id|stringformat:"s"|slice:":8" }}</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'test_request_update' test_request.id %}" class="btn btn-warning">
+                <i class="fas fa-edit me-1"></i> تعديل الطلب
+            </a>
+            {% if test_request.individual_tests.all %}
+            <a href="{% url 'bulk_individual_results' test_request.id %}" class="btn btn-success">
+                <i class="fas fa-flask me-1"></i> نتائج التحاليل الفردية
+            </a>
+            {% endif %}
+            {% if test_request.test_groups.all %}
+            <a href="{% url 'bulk_group_results' test_request.id %}" class="btn btn-info">
+                <i class="fas fa-layer-group me-1"></i> نتائج المجموعات
+            </a>
+            {% endif %}
+            <a href="{% url 'test_request_barcode_label' test_request.id %}" class="btn btn-secondary">
+                <i class="fas fa-qrcode me-1"></i> ملصق الباركود
+            </a>
+            <a href="{% url 'test_request_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-right me-1"></i> العودة للقائمة
+            </a>
         </div>
     </div>
 
-    <div class="col-lg-6 mb-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-info-circle me-2"></i>
-                    تفاصيل الطلب
-                </h5>
-            </div>
-            <div class="card-body">
-                <p><strong>تاريخ الطلب:</strong> {{ test_request.request_date|date:"Y/m/d H:i" }}</p>
-                <p><strong>الحالة:</strong> 
-                    {% if test_request.status == 'pending' %}
-                        <span class="badge bg-warning text-dark">قيد الانتظار</span>
-                    {% elif test_request.status == 'in_progress' %}
-                        <span class="badge bg-info text-dark">قيد التنفيذ</span>
-                    {% elif test_request.status == 'completed' %}
-                        <span class="badge bg-success">مكتملة</span>
-                    {% elif test_request.status == 'cancelled' %}
-                        <span class="badge bg-danger">ملغية</span>
-                    {% endif %}
-                </p>
-                <p><strong>الإجمالي:</strong> {{ test_request.total_price }} ريال</p>
-                <p><strong>ملاحظات:</strong> {{ test_request.notes|default:"لا توجد ملاحظات" }}</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card shadow-sm mb-4">
-    <div class="card-header">
-        <h5 class="card-title mb-0">
-            <i class="fas fa-flask me-2"></i>
-            التحاليل المطلوبة والنتائج
-        </h5>
-    </div>
-    <div class="card-body">
-        {% if test_request.individual_tests.all or test_request.test_groups.all %}
-            <div class="accordion" id="testsAccordion">
-                {% for test in test_request.individual_tests.all %}
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingIndividual{{ test.id }}">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIndividual{{ test.id }}" aria-expanded="false" aria-controls="collapseIndividual{{ test.id }}">
-                            {{ test.name }} (فردي) - {{ test.price }} ريال
-                            {% with result=individual_results|get_item_by_test_id:test.id %}
-                                {% if result %}
-                                    {% if result.status == 'normal' %}
-                                        <span class="badge bg-success ms-2">طبيعي</span>
-                                    {% elif result.status == 'high' %}
-                                        <span class="badge bg-danger ms-2">مرتفع</span>
-                                    {% elif result.status == 'low' %}
-                                        <span class="badge bg-warning text-dark ms-2">منخفض</span>
-                                    {% endif %}
-                                {% else %}
-                                    <span class="badge bg-secondary ms-2">لم يتم إدخال النتيجة</span>
-                                {% endif %}
-                            {% endwith %}
-                        </button>
-                    </h2>
-                    <div id="collapseIndividual{{ test.id }}" class="accordion-collapse collapse" aria-labelledby="headingIndividual{{ test.id }}" data-bs-parent="#testsAccordion">
-                        <div class="accordion-body">
-                            <p><strong>الوصف:</strong> {{ test.description }}</p>
-                            <p><strong>الوحدة:</strong> {{ test.unit }}</p>
-                            <p><strong>القيم الطبيعية:</strong> {{ test.normal_value_min }} - {{ test.normal_value_max }} {{ test.unit }}</p>
-                            
-                            {% with result=individual_results|get_item_by_test_id:test.id %}
-                                {% if result %}
-                                    <h6>النتيجة:</h6>
-                                    <p><strong>القيمة:</strong> {{ result.value }} {{ test.unit }}</p>
-                                    <p><strong>الحالة:</strong> 
-                                        {% if result.status == 'normal' %}طبيعي
-                                        {% elif result.status == 'high' %}مرتفع
-                                        {% elif result.status == 'low' %}منخفض
-                                        {% endif %}
-                                    </p>
-                                    <p><strong>تاريخ النتيجة:</strong> {{ result.result_date|date:"Y/m/d H:i" }}</p>
-                                    <p><strong>ملاحظات:</strong> {{ result.notes|default:"لا توجد ملاحظات" }}</p>
-                                    <a href="{% url 'add_test_result' test_request.id test.id %}" class="btn btn-sm btn-info">
-                                        <i class="fas fa-edit me-1"></i>
-                                        تعديل النتيجة
-                                    </a>
-                                {% else %}
-                                    <p class="text-muted">لم يتم إدخال نتيجة لهذا التحليل بعد.</p>
-                                    <a href="{% url 'add_test_result' test_request.id test.id %}" class="btn btn-sm btn-success">
-                                        <i class="fas fa-plus me-1"></i>
-                                        إضافة نتيجة
-                                    </a>
-                                {% endif %}
-                            {% endwith %}
+    <!-- بطاقة حالة الطلب -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body py-3">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-clipboard-list fa-2x text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h5 class="card-title mb-0">حالة الطلب</h5>
+                            <p class="card-text text-muted mb-0">تاريخ الطلب: {{ test_request.request_date|date:"Y/m/d H:i" }}</p>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
+                <div class="col-md-6 text-md-end">
+                    <span class="badge fs-6 
+                        {% if test_request.status == 'pending' %}bg-warning text-dark
+                        {% elif test_request.status == 'in_progress' %}bg-info text-dark
+                        {% elif test_request.status == 'completed' %}bg-success
+                        {% elif test_request.status == 'cancelled' %}bg-danger
+                        {% endif %}">
+                        {% if test_request.status == 'pending' %}قيد الانتظار
+                        {% elif test_request.status == 'in_progress' %}قيد التنفيذ
+                        {% elif test_request.status == 'completed' %}مكتملة
+                        {% elif test_request.status == 'cancelled' %}ملغية
+                        {% endif %}
+                    </span>
+                    <p class="text-muted mt-2 mb-0">الإجمالي: <strong>{{ test_request.total_price }} ريال</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                {% for group in test_request.test_groups.all %}
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingGroup{{ group.id }}">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGroup{{ group.id }}" aria-expanded="false" aria-controls="collapseGroup{{ group.id }}">
-                            {{ group.name }} (مجموعة) - {{ group.total_price }} ريال
-                        </button>
-                    </h2>
-                    <div id="collapseGroup{{ group.id }}" class="accordion-collapse collapse" aria-labelledby="headingGroup{{ group.id }}" data-bs-parent="#testsAccordion">
-                        <div class="accordion-body">
-                            <p><strong>الوصف:</strong> {{ group.description }}</p>
-                            <p><strong>التحاليل المتضمنة:</strong></p>
-                            <ul>
+    <div class="row">
+        <!-- معلومات المريض -->
+        <div class="col-lg-5 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        معلومات المريض
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-user-circle fa-2x text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0"><a href="{% url 'patient_detail' test_request.patient.id %}" class="text-decoration-none">{{ test_request.patient.full_name }}</a></h6>
+                            <small class="text-muted">رقم الهوية: {{ test_request.patient.national_id }}</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6 mb-2">
+                            <small class="text-muted d-block">تاريخ الميلاد</small>
+                            <p class="mb-0">{{ test_request.patient.date_of_birth|date:"Y/m/d" }} ({{ test_request.patient.age }} سنة)</p>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <small class="text-muted d-block">الجنس</small>
+                            <p class="mb-0">{{ test_request.patient.get_gender_display }}</p>
+                        </div>
+                        <div class="col-12 mb-2">
+                            <small class="text-muted d-block">رقم الهاتف</small>
+                            <p class="mb-0">{{ test_request.patient.phone_number }}</p>
+                        </div>
+                        <div class="col-12">
+                            <small class="text-muted d-block">العنوان</small>
+                            <p class="mb-0">{{ test_request.patient.address }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- التحاليل المطلوبة -->
+        <div class="col-lg-7 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-flask me-2"></i>
+                        التحاليل المطلوبة
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if test_request.individual_tests.all or test_request.test_groups.all %}
+                    <div class="list-group list-group-flush">
+                        <!-- التحاليل الفردية -->
+                        {% for test in test_request.individual_tests.all %}
+                        <div class="list-group-item border-0 px-0 py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ test.name }}</h6>
+                                    <p class="text-muted mb-0 small">{{ test.description|default:"لا يوجد وصف" }}</p>
+                                </div>
+                                <div class="text-end">
+                                    <span class="d-block text-primary mb-1">{{ test.price }} ريال</span>
+                                    {% with result=individual_results|get_item_by_test_id:test.id %}
+                                        {% if result %}
+                                            <span class="badge 
+                                                {% if result.status == 'normal' %}bg-success
+                                                {% elif result.status == 'high' %}bg-danger
+                                                {% elif result.status == 'low' %}bg-warning text-dark
+                                                {% endif %}">
+                                                {% if result.status == 'normal' %}طبيعي
+                                                {% elif result.status == 'high' %}مرتفع
+                                                {% elif result.status == 'low' %}منخفض
+                                                {% endif %}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">بانتظار النتيجة</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <a href="{% url 'add_test_result' test_request.id test.id %}" class="btn btn-sm {% with result=individual_results|get_item_by_test_id:test.id %}{% if result %}btn-outline-info{% else %}btn-outline-success{% endif %}{% endwith %}">
+                                    <i class="fas fa-{% with result=individual_results|get_item_by_test_id:test.id %}{% if result %}edit{% else %}plus{% endif %}{% endwith %} me-1"></i>
+                                    {% with result=individual_results|get_item_by_test_id:test.id %}{% if result %}تعديل النتيجة{% else %}إضافة نتيجة{% endif %}{% endwith %}
+                                </a>
+                                {% with result=individual_results|get_item_by_test_id:test.id %}
+                                    {% if result %}
+                                        <span class="text-muted small ms-2">آخر تحديث: {{ result.result_date|date:"Y/m/d H:i" }}</span>  
+                                        <span class="text-muted small ms-2">بواسطة {{ result.entered_by.username }} </span>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <!-- مجموعات التحاليل -->
+                        {% for group in test_request.test_groups.all %}
+                        <div class="list-group-item border-0 px-0 py-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0 text-info">{{ group.name }} (مجموعة)</h6>
+                                <span class="text-primary">{{ group.total_price }} ريال</span>
+                            </div>
+                            <p class="text-muted small mb-3">{{ group.description|default:"لا يوجد وصف" }}</p>
+                            
+                            <div class="bg-light p-3 rounded">
                                 {% for test in group.tests.all %}
-                                    <li>
-                                        {{ test.name }} ({{ test.price }} ريال)
+                                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 {% if not forloop.last %}border-bottom{% endif %}">
+                                    <div>
+                                        <p class="mb-0">{{ test.name }}</p>
+                                        <small class="text-muted">{{ test.unit }} | الطبيعي: {{ test.normal_value_min }} - {{ test.normal_value_max }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="d-block text-muted small mb-1">{{ test.price }} ريال</span>
                                         {% with result=individual_results|get_item_by_test_id:test.id %}
                                             {% if result %}
-                                                {% if result.status == 'normal' %}
-                                                    <span class="badge bg-success ms-2">طبيعي</span>
-                                                {% elif result.status == 'high' %}
-                                                    <span class="badge bg-danger ms-2">مرتفع</span>
-                                                {% elif result.status == 'low' %}
-                                                    <span class="badge bg-warning text-dark ms-2">منخفض</span>
-                                                {% endif %}
-                                                - القيمة: {{ result.value }} {{ test.unit }}
+                                                <span class="badge 
+                                                    {% if result.status == 'normal' %}bg-success
+                                                    {% elif result.status == 'high' %}bg-danger
+                                                    {% elif result.status == 'low' %}bg-warning text-dark
+                                                    {% endif %}">
+                                                    {% if result.status == 'normal' %}طبيعي
+                                                    {% elif result.status == 'high' %}مرتفع
+                                                    {% elif result.status == 'low' %}منخفض
+                                                    {% endif %}
+                                                </span>
                                             {% else %}
-                                                <span class="badge bg-secondary ms-2">لم يتم إدخال النتيجة</span>
+                                                <span class="badge bg-secondary">بانتظار النتيجة</span>
                                             {% endif %}
                                         {% endwith %}
-                                        <a href="{% url 'add_test_result' test_request.id test.id %}" class="btn btn-sm {% with result=individual_results|get_item_by_test_id:test.id %}{% if result %}btn-info{% else %}btn-success{% endif %}{% endwith %} ms-2">
-                                            <i class="fas fa-{% with result=individual_results|get_item_by_test_id:test.id %}{% if result %}edit{% else %}plus{% endif %}{% endwith %} me-1"></i>
-                                            {% with result=individual_results|get_item_by_test_id:test.id %}{% if result %}تعديل النتيجة{% else %}إضافة نتيجة{% endif %}{% endwith %}
-                                        </a>
-                                    </li>
+                                    </div>
+                                </div>
+                                <div class="text-end mb-3">
+                                    <a href="{% url 'add_test_result' test_request.id test.id %}" class="btn btn-sm {% with result=individual_results|get_item_by_test_id:test.id %}{% if result %}btn-outline-info{% else %}btn-outline-success{% endif %}{% endwith %}">
+                                        <i class="fas fa-{% with result=individual_results|get_item_by_test_id:test.id %}{% if result %}edit{% else %}plus{% endif %}{% endwith %} me-1"></i>
+                                        {% with result=individual_results|get_item_by_test_id:test.id %}{% if result %}تعديل النتيجة{% else %}إضافة نتيجة{% endif %}{% endwith %}
+                                    </a>
+                                    {% with result=individual_results|get_item_by_test_id:test.id %}
+                                    {% if result %}
+                                        <span class="text-muted small ms-2">آخر تحديث: {{ result.result_date|date:"Y/m/d H:i" }}</span>  
+                                        <span class="text-muted small ms-2">بواسطة {{ result.entered_by.username }} </span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
                                 {% endfor %}
-                            </ul>
+                            </div>
                         </div>
+                        {% endfor %}
                     </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-flask fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">لا توجد تحاليل أو مجموعات تحاليل مرتبطة بهذا الطلب.</p>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endfor %}
             </div>
-        {% else %}
-            <div class="alert alert-info text-center" role="alert">
-                <i class="fas fa-info-circle me-2"></i>
-                لا توجد تحاليل أو مجموعات تحاليل مرتبطة بهذا الطلب.
-            </div>
-        {% endif %}
+        </div>
     </div>
+
+    <!-- ملاحظات الطلب -->
+    {% if test_request.notes %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light py-3">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-sticky-note me-2"></i>
+                ملاحظات الطلب
+            </h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-0">{{ test_request.notes }}</p>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
+<style>
+.card {
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+}
+.card:hover {
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+}
+.list-group-item {
+    transition: all 0.2s ease;
+}
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+.badge {
+    font-size: 0.75em;
+    padding: 0.35em 0.65em;
+}
+.btn {
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+</style>
 {% endblock %}
-

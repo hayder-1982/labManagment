@@ -47,6 +47,9 @@ INSTALLED_APPS = [
     # Own
     'core.apps.CoreConfig',
     'lab',
+    "widget_tweaks",
+
+    #for update database 
      
 ]
 

@@ -52,12 +52,14 @@
                   <hr class="my-1">
                   <div class="chips-container">
                     {% for test in group.list %}
+                    {% if test.is_active %}
                       <label class="test-chip" data-checkbox="test_{{ test.id }}">
                         <input type="checkbox" class="d-none test-checkbox"
                                name="individual_tests" value="{{ test.id }}"
                                data-price="{{ test.price }}" id="test_{{ test.id }}">
                         {{ test.name }}
                       </label>
+                      {% endif %}
                     {% endfor %}
                   </div>
                 </div>
@@ -72,12 +74,14 @@
             </h6>
             <div id="groups-container" class="chips-container">
               {% for group in form.test_groups.field.queryset %}
+              {% if group.is_active %}
                 <label class="test-chip" data-checkbox="group_{{ group.id }}">
                   <input type="checkbox" class="d-none group-checkbox"
                          name="test_groups" value="{{ group.id }}"
                          data-price="{{ group.total_price }}" id="group_{{ group.id }}">
                   {{ group.name }}
                 </label>
+              {% endif %}
               {% endfor %}
             </div>
           </div>
