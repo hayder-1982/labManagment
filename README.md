@@ -24,6 +24,9 @@ DO UPDATE SET
     notes = excluded.notes;
  -->
 
+ 
+<!-- INSERT INTO lab_deviceresult (device_name, result, barcode_id, test_id, insert_datetime, is_active)
+VALUES ('swelab', 5.5, 2509161794, 1, CURRENT_TIMESTAMP, 1); -->
 
 
 ## Contact

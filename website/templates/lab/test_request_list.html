@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}قائمة طلبات التحاليل - نظام إدارة المختبرات الطبية{% endblock %}
+{% block title %}قائمة طلبات التحاليل - نظام تكنولاب إدارة المختبرات الطبية{% endblock %}
 
 {% block content %}
 
@@ -20,7 +20,7 @@
           <i class="fas fa-search text-muted"></i>
         </span>
         <input type="text" class="form-control border-start-0" name="search"
-               placeholder="ابحث بالاسم أو الهوية أو الهاتف..."
+               placeholder="ابحث بالاسم أو الباركود ..."
                value="{{ search_query }}">
         <button type="submit" class="btn btn-primary">
           بحث
@@ -36,7 +36,10 @@
 
   </div>
 </div>
-
+<form method="post" action="{% url 'update_device_results' %}">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-primary">تحديث النتائج</button>
+</form>
 
 
 
@@ -69,11 +72,11 @@
                         <td>{{ request.request_date|date:"y/m/d H:i" }}</td>
                         <td>
                             {% for test in request.individual_tests.all %}
-                                <span class="badge bg-info text-dark">{{ test.name }}</span>
+                                <span class="badge bg-info text-dark">{{ test.app_name }}</span>
                             {% empty %}
                             {% endfor %}
                             {% for group in request.test_groups.all %}
-                                <span class="badge bg-primary">{{ group.name }}</span>
+                                <span class="badge bg-primary">{{ group.app_name }}</span>
                             {% empty %}
                             {% endfor %}
                         </td>
@@ -90,6 +93,10 @@
                             {% endif %}
                         </td>
                         <td>
+                            <a href="{% url 'patient_report' request.patient.id %}" 
+                                class="btn btn-sm btn-outline-info" title="تقرير النتائج">
+                                <i class="fas fa-file-medical"></i>
+                            </a>
                             <a href="{% url 'test_request_detail' request.id %}" class="btn btn-sm btn-outline-info" title="عرض التفاصيل">
                                 <i class="fas fa-eye"></i>
                             </a>

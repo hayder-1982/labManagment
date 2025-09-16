@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}قائمة المرضى - نظام إدارة المختبرات الطبية{% endblock %}
+{% block title %}قائمة المرضى - نظام تكنولاب إدارة المختبرات الطبية{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -20,7 +20,7 @@
         <form method="get" class="row g-3">
             <div class="col-md-10">
                 <input type="text" class="form-control" name="search" 
-                       placeholder="البحث بالاسم أو رقم الهوية أو رقم الهاتف..." 
+                       placeholder="البحث بالاسم أو رقم الباركود ..." 
                        value="{{ search_query }}">
             </div>
             <div class="col-md-2">
@@ -32,6 +32,11 @@
         </form>
     </div>
 </div>
+
+<!-- <form method="post" action="{% url 'update_device_results' %}">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-primary">تحديث النتائج</button>
+</form> -->
 
 <!-- قائمة المرضى -->
 <div class="card">
@@ -51,11 +56,10 @@
                     <thead>
                         <tr>
                             <th>الاسم الكامل</th>
-                            <th>رقم الهوية</th>
+                            <th>الباركود</th>
                             <th>العمر</th>
                             <th>الجنس</th>
                             <th>رقم الهاتف</th>
-                            <th>الحالة</th>
                             <th>تاريخ التسجيل</th>
                             <th>الإجراءات</th>
                         </tr>
@@ -77,7 +81,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>{{ patient.national_id }}</td>
+                            <td>{{ patient.barcode }}</td>
                             <td>
                                 <span class="badge bg-info">{{ patient.age }} سنة</span>
                             </td>
@@ -88,10 +92,7 @@
                                     <span class="badge bg-pink">أنثى</span>
                                 {% endif %}
                             </td>
-                            <td>{{ patient.phone_number }}</td>
-                            <td>
-                            --
-                            </td>
+                            <td>{{ patient.phone_number|default_if_none:"" }}</td>
                             <td>
                                 <div>{{ patient.created_at|date:"Y/m/d" }}</div>
                                 <small class="text-muted">{{ patient.created_at|time:"H:i" }}</small>
@@ -111,10 +112,10 @@
                                        class="btn btn-sm btn-outline-warning" title="تعديل">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="{% url 'test_request_create' %}?patient={{ patient.id }}" 
+                                    <!-- <a href="{% url 'test_request_create' %}?patient={{ patient.id }}" 
                                        class="btn btn-sm btn-outline-success" title="طلب تحليل">
                                         <i class="fas fa-vial"></i>
-                                    </a>
+                                    </a> -->
                                     <!-- إضافة في قسم الإجراءات -->
                                     <a href="{% url 'patient_barcode_label' patient.id %}" 
                                     class="btn btn-sm btn-info" title="ملصق الباركود">

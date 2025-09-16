@@ -40,6 +40,9 @@ urlpatterns = [
 
     # AJAX
     path("ajax/search-patients/", views.search_patients_ajax, name="search_patients_ajax"),
+
+
+     path('update-device-results/', views.update_device_results, name='update_device_results'),
 ]
 
 

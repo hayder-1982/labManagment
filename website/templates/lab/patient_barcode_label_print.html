@@ -1,35 +1,72 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ملصق الباركود - {{ patient.full_name }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"> -->
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- <link rel="stylesheet" href="{% static 'css/fontawesome-free-6.7.2-web/css/all.min.css' %}"> -->
     
     <style>
         @page {
             size: 10cm 7cm;
             margin: 0.5cm;
         }
-        
+    
         @media print {
-            body { margin: 0; }
-            .no-print { display: none !important; }
-        }
+                body { margin: 0; }
+                .no-print { display: none !important; }
+                .barcode-label {
+                    font-family: 'DejaVu Sans', Tahoma, Arial, sans-serif !important;
+                    font-size: 13px !important;
+                    font-weight: bold;
+                    line-height: 1.3;
+                    color: #000 !important;
+
+                    /* تحسين جودة الطباعة */
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                    -webkit-font-smoothing: none;
+                    -moz-osx-font-smoothing: grayscale;
+
+                    /* منع تقسيم الملصق بين الصفحات */
+                    page-break-inside: avoid;
+                }
+
+                .barcode-label h2 {
+                    margin: 0;
+                    padding: 0;
+                    font-size: 14px;
+                    font-weight: bold;
+                    white-space: normal !important;
+                    word-wrap: break-word;
+                }
+
+                .barcode-label p {
+                    margin: 0;
+                    padding: 0;
+                    font-size: 12px;
+                }
+                }
+
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
+            font-family: 'Times New Roman', Times, serif;
             font-size: 10px;
             line-height: 1.2;
         }
         
-        .barcode-label {
-            width: 9cm;
-            height: 6cm;
-            border: 1px solid #000;
-            padding: 0.33cm;
-            background: white;
+        .barcode-label h2{
+            margin: 0;
+            padding: 0;
+            font-size: 14px;
+            font-weight: bold;
+            white-space: normal !important;
+            word-wrap: break-word;
         }
         
         .lab-header h6 {
@@ -63,7 +100,7 @@
         }
         
         .label-footer small {
-            font-size: 6px;
+            font-size: 5px;
         }
         
         .qr-code img,
@@ -85,27 +122,21 @@
         </button>
     </div>
     
-   <div class="barcode-label" style="text-align:center; margin:0; padding: 15px;; font-family:'Segoe UI', Tahoma, Arial, sans-serif; line-height:1;">
-    
+   <div class="barcode-label">
     {% if label_data.linear_barcode %}
-        
-        {# اسم الاختبار #}
-        <h2 style="margin:0; padding:0; font-size:12px; font-weight:bold; white-space:nowrap;">
+        <!-- اسم التحليل -->
+        <h2>
             {{ label_data.test_info.individual_tests }} - {{ label_data.test_info.test_groups }}
         </h2>
-        
-        {# الباركود SVG كبير ومتوسّط #}
-        <div style="display:flex; justify-content:center; align-items:center; margin:5px 0; width:100%;">
-            <div style="width:120%; height:auto;">
-                {{ label_data.linear_barcode|safe }}
-            </div>
+
+        <!-- الباركود -->
+        <div style="display:flex; justify-content:center; align-items:center; margin:5px 0;">
+            {{ label_data.linear_barcode|safe }}
         </div>
-        
-        {# اسم المريض + تاريخ #}
-        <h2 style="margin:0; padding:0; font-size:12px; font-weight:bold; white-space:nowrap;">
-            {{ patient.full_name }} - {{ patient.created_at|date:"Y-m-d H:i" }}
-        </h2>
-        
+
+        <!-- بيانات المريض -->
+        <h2>{{ patient.full_name }} - {{ patient.created_at|date:"Y-m-d H:i" }}</h2>
+        <h2>{{ patient.barcode }}</h2>
     {% endif %}
 </div>
 

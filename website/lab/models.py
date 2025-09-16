@@ -56,20 +56,22 @@ class Patient(models.Model):
             raise ValidationError("يجب إدخال العمر أو تاريخ الميلاد على الأقل.")
 
     def save(self, *args, **kwargs):
-        if not self.barcode: 
+        # توليد الباركود إذا لم يكن موجود
+        if not self.barcode:
             date_part = datetime.now().strftime('%y%m%d')
-            random_part = str(random.randint(1000, 9999)) 
+            random_part = str(random.randint(1000, 9999))
             self.barcode = f"{date_part}{random_part}"
-        
-        self.clean()  # يضمن تحقق الشرط
+
+        # حساب العمر أو تاريخ الميلاد اعتمادًا على ما تم إدخاله
         if self.date_of_birth and not self.age:
             self.age = self.calculate_age()
         elif self.age and not self.date_of_birth:
             self.date_of_birth = self.estimate_birthdate_from_age()
         elif self.date_of_birth and self.age:
+            # تحديث العمر إذا تم تعديل تاريخ الميلاد
             self.age = self.calculate_age()
-        super().save(*args, **kwargs)
 
+        super().save(*args, **kwargs)
 
     # @property
     # def age(self):
@@ -96,19 +98,25 @@ class IndividualTest(models.Model):
     app_name = models.CharField(max_length=100, default="singletest")  # 👈 اضف default
     # description = models.TextField(choices=DEPARTMENT,blank=True, verbose_name='الوصف')
     description =models.CharField(max_length=20, choices=DEPARTMENT, default='hematology', verbose_name='الحالة')
-    subclass = models.TextField(blank=True, verbose_name='subclass')
+    # subclass = models.TextField(blank=True, verbose_name='subclass')
+    subclass = models.CharField(max_length=100, blank=True, verbose_name='subclass')
     unit = models.CharField(max_length=50, verbose_name='الوحدة')
-    normal_value_min = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='القيمة الطبيعية الدنيا')
-    normal_value_max = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='القيمة الطبيعية العليا')
+    normal_value_min_m = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='القيمة الطبيعية الدنيا رجال')
+    normal_value_max_m = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='القيمة الطبيعية العليا رجال')
+    normal_value_min_f = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='القيمة الطبيعية الدنيا نساء')
+    normal_value_max_f = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='القيمة الطبيعية العليا نساء')
+    normal_value_m = models.TextField(blank=True, null=True, verbose_name='القيم الطبيعية رجال') # يسمح بأن يكون فارغًا في النماذج# يسمح بأن يكون فارغًا في قاعدة البيانات
+    normal_value_f = models.TextField(blank=True, null=True, verbose_name='القيم الطبيعية نساء')
     price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)], verbose_name='السعر')
     is_active = models.BooleanField(default=True, verbose_name='نشط')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ الإنشاء')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='تاريخ التحديث')
+    display_order = models.PositiveIntegerField(default=0, verbose_name="ترتيب العرض")
     
     class Meta:
         verbose_name = 'تحليل فردي'
         verbose_name_plural = 'التحاليل الفردية'
-        ordering = ['name']
+        ordering = ['display_order']
     
     def __str__(self):
         return self.name
@@ -225,46 +233,222 @@ class TestRequest(models.Model):
         return round((total_results / total_tests) * 100, 1)
 
 
+# class IndividualTestResult(models.Model):
+#     """نموذج نتيجة التحليل الفردي"""
+#     STATUS_CHOICES = [
+#         ('normal', 'طبيعي'),
+#         ('high', 'مرتفع'),
+#         ('low', 'منخفض'),
+#         ('abnormal', 'غير طبيعي'),
+#     ]
+    
+#     # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+#     id = models.AutoField(primary_key=True)
+#     test_request = models.ForeignKey(TestRequest, on_delete=models.CASCADE, verbose_name='طلب التحليل')
+#     individual_test = models.ForeignKey(IndividualTest, on_delete=models.CASCADE, verbose_name='التحليل')
+#     # value = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='القيمة')
+#     value = models.CharField(max_length=100, verbose_name="القيمة")
+#     status = models.CharField(max_length=20, choices=STATUS_CHOICES,blank=True, verbose_name='الحالة')
+#     result_date = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ النتيجة')
+#     notes = models.TextField(blank=True, verbose_name='ملاحظات')
+#     entered_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='أدخل بواسطة')
+    
+#     class Meta:
+#         verbose_name = 'نتيجة تحليل فردي'
+#         verbose_name_plural = 'نتائج التحاليل الفردية'
+#         ordering = ['-result_date']
+#         unique_together = ['test_request', 'individual_test']
+    
+#     def __str__(self):
+#         return f"{self.individual_test.name} - {self.value} {self.individual_test.unit}"
+    
+#     def save(self, *args, **kwargs):
+#         """تحديد حالة النتيجة تلقائياً بناءً على القيم الطبيعية وتحديث حالة الطلب"""
+#         if self.individual_test.normal_value_min and self.individual_test.normal_value_max:
+#             if self.value < self.individual_test.normal_value_min:
+#                 self.status = 'low'
+#             elif self.value > self.individual_test.normal_value_max:
+#                 self.status = 'high'
+#             else:
+#                 self.status = 'normal'
+        
+#         super().save(*args, **kwargs)
+        
+#         # تحديث حالة طلب التحليل بعد حفظ النتيجة
+#         if self.test_request:
+#             self.test_request.check_completion_status()
+
+from decimal import Decimal, InvalidOperation
+
+# class IndividualTestResult(models.Model):
+#     """نموذج نتيجة التحليل الفردي"""
+#     STATUS_CHOICES = [
+#         ('normal', 'طبيعي'),
+#         ('high', 'مرتفع'),
+#         ('low', 'منخفض'),
+#         ('abnormal', 'غير طبيعي'),
+#         ('n/a', 'غير محدد'),
+#     ]
+    
+#     id = models.AutoField(primary_key=True)
+#     test_request = models.ForeignKey(TestRequest, on_delete=models.CASCADE, verbose_name='طلب التحليل')
+#     individual_test = models.ForeignKey(IndividualTest, on_delete=models.CASCADE, verbose_name='التحليل')
+#     value = models.CharField(max_length=100, verbose_name="القيمة")  # 👈 يدعم أرقام + نصوص
+#     status = models.CharField(max_length=20, choices=STATUS_CHOICES, blank=True, verbose_name='الحالة')
+#     result_date = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ النتيجة')
+#     notes = models.TextField(blank=True, verbose_name='ملاحظات')
+#     # entered_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='أدخل بواسطة')
+#      # المستخدم الذي أدخل النتيجة أول مرة
+#     entered_by = models.ForeignKey(User, related_name="results_entered",on_delete=models.SET_NULL, null=True, blank=True, verbose_name='أدخل بواسطة')
+#     # آخر مستخدم عدل النتيجة
+#     last_modified_by = models.ForeignKey(User, related_name="results_modified",on_delete=models.SET_NULL, null=True, blank=True, verbose_name='اخر تغديل بواسطة'  )
+#     # التاريخ والوقت
+#     created_at = models.DateTimeField(auto_now_add=True)   # أول إدخال
+#     updated_at = models.DateTimeField(auto_now=True)       # آخر تعديل
+
+#     class Meta:
+#         verbose_name = 'نتيجة تحليل فردي'
+#         verbose_name_plural = 'نتائج التحاليل الفردية'
+#         ordering = ['-result_date']
+#         unique_together = ['test_request', 'individual_test']
+    
+#     def __str__(self):
+#         return f"{self.individual_test.name} - {self.value} {self.individual_test.unit}"
+    
+#     def save(self, *args, **kwargs):
+#         """تحديد حالة النتيجة تلقائياً بناءً على القيم الطبيعية وجنس المريض"""
+#         try:
+#             numeric_value = Decimal(self.value)
+            
+#             gender = self.test_request.patient.get_gender_display()
+            
+#             if gender == 'ذكر':
+#                 min_val = self.individual_test.normal_value_min_m
+#                 max_val = self.individual_test.normal_value_max_m or self.individual_test.normal_value_max
+#             else:  # أنثى
+#                 min_val = self.individual_test.normal_value_min_f
+#                 max_val = self.individual_test.normal_value_max_f or self.individual_test.normal_value_max
+
+#             # تحويل القيم إلى Decimal إذا لم تكن None أو فارغة
+#             min_val = Decimal(min_val) if min_val not in [None, ''] else None
+#             max_val = Decimal(max_val) if max_val not in [None, ''] else None
+
+#             # تحديد الحالة
+#             if min_val is not None and numeric_value < min_val:
+#                 self.status = 'low'
+#             elif max_val is not None and numeric_value > max_val:
+#                 self.status = 'high'
+#             else:
+#                 self.status = 'normal'
+
+#         except (InvalidOperation, TypeError):
+#             # إذا القيمة ليست رقم (مثلاً "Positive" أو "++")
+#             if not self.status:
+#                 self.status = 'n/a'
+        
+#         super().save(*args, **kwargs)
+        
+#         # تحديث حالة طلب التحليل بعد حفظ النتيجة
+#         if self.test_request:
+#             self.test_request.check_completion_status()
+from decimal import Decimal, InvalidOperation
+from django.db import models
+from django.contrib.auth.models import User
+from lab.models import TestRequest, IndividualTest  # تأكد من المسار الصحيح للنماذج
+
 class IndividualTestResult(models.Model):
     """نموذج نتيجة التحليل الفردي"""
+    
     STATUS_CHOICES = [
         ('normal', 'طبيعي'),
         ('high', 'مرتفع'),
         ('low', 'منخفض'),
         ('abnormal', 'غير طبيعي'),
+        ('n/a', 'غير محدد'),
     ]
-    
-    # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     id = models.AutoField(primary_key=True)
     test_request = models.ForeignKey(TestRequest, on_delete=models.CASCADE, verbose_name='طلب التحليل')
     individual_test = models.ForeignKey(IndividualTest, on_delete=models.CASCADE, verbose_name='التحليل')
-    value = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='القيمة')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES,blank=True, verbose_name='الحالة')
+    value = models.CharField(max_length=100, verbose_name="القيمة")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, blank=True, verbose_name='الحالة')
     result_date = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ النتيجة')
     notes = models.TextField(blank=True, verbose_name='ملاحظات')
-    entered_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='أدخل بواسطة')
-    
+
+    entered_by = models.ForeignKey(
+        User,
+        related_name="results_entered",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='أدخل بواسطة'
+    )
+
+    last_modified_by = models.ForeignKey(
+        User,
+        related_name="results_modified",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='آخر تعديل بواسطة'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         verbose_name = 'نتيجة تحليل فردي'
         verbose_name_plural = 'نتائج التحاليل الفردية'
         ordering = ['-result_date']
         unique_together = ['test_request', 'individual_test']
-    
+
     def __str__(self):
         return f"{self.individual_test.name} - {self.value} {self.individual_test.unit}"
-    
+
     def save(self, *args, **kwargs):
-        """تحديد حالة النتيجة تلقائياً بناءً على القيم الطبيعية وتحديث حالة الطلب"""
-        if self.individual_test.normal_value_min and self.individual_test.normal_value_max:
-            if self.value < self.individual_test.normal_value_min:
+        """تحديد حالة النتيجة تلقائياً بناءً على القيم الطبيعية وجنس المريض"""
+        try:
+            numeric_value = Decimal(self.value)
+            gender = self.test_request.patient.get_gender_display()
+
+            if gender == 'ذكر':
+                min_val = self.individual_test.normal_value_min_m
+                max_val = self.individual_test.normal_value_max_m
+                # إذا كانت القيم الفارغة، استخدم النص العام
+                if min_val is None or max_val is None:
+                    try:
+                        vals = self.individual_test.normal_value_m.split('-')
+                        min_val = Decimal(vals[0].strip())
+                        max_val = Decimal(vals[1].strip()) if len(vals) > 1 else None
+                    except Exception:
+                        min_val, max_val = None, None
+
+            else:  # أنثى
+                min_val = self.individual_test.normal_value_min_f
+                max_val = self.individual_test.normal_value_max_f
+                if min_val is None or max_val is None:
+                    try:
+                        vals = self.individual_test.normal_value_f.split('-')
+                        min_val = Decimal(vals[0].strip())
+                        max_val = Decimal(vals[1].strip()) if len(vals) > 1 else None
+                    except Exception:
+                        min_val, max_val = None, None
+
+            # تحديد الحالة
+            if min_val is not None and numeric_value < min_val:
                 self.status = 'low'
-            elif self.value > self.individual_test.normal_value_max:
+            elif max_val is not None and numeric_value > max_val:
                 self.status = 'high'
             else:
                 self.status = 'normal'
-        
+
+        except (InvalidOperation, TypeError, AttributeError):
+            # إذا القيمة ليست رقمية (مثلاً "Positive") أو لا يمكن استخراج القيم
+            if not self.status:
+                self.status = 'n/a'
+
         super().save(*args, **kwargs)
-        
+
         # تحديث حالة طلب التحليل بعد حفظ النتيجة
         if self.test_request:
             self.test_request.check_completion_status()
@@ -326,21 +510,38 @@ class PrintedReport(models.Model):
 
 
 
+from django.db import models
+from django.utils import timezone
+
 class DeviceResult(models.Model):
     device_name = models.CharField(max_length=200, verbose_name="اسم الجهاز")
-    barcode = models.ForeignKey(Patient, to_field='barcode', on_delete=models.CASCADE, verbose_name='المريض')
-    test = models.ForeignKey(IndividualTest, on_delete=models.CASCADE, verbose_name='التحليل')
+    barcode = models.ForeignKey(
+        'Patient',
+        to_field='barcode',
+        on_delete=models.CASCADE,
+        verbose_name='المريض'
+    )
+    test = models.ForeignKey(
+        'IndividualTest',
+        on_delete=models.CASCADE,
+        verbose_name='التحليل'
+    )
     result = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="نتيجة التحليل")
     insert_datetime = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ النتيجة')
-    is_active = models.BooleanField(default=True, verbose_name="نشط")  # ✅ العمود البولين الجديد
-    
+    is_active = models.BooleanField(default=True, verbose_name="نشط")  # للتحكم بالنتائج النشطة
+
     class Meta:
         verbose_name = "نتيجة جهاز"
         verbose_name_plural = "نتائج الأجهزة"
         ordering = ["-insert_datetime"]
         constraints = [
-            models.UniqueConstraint(fields=['barcode', 'test'], name='unique_device_barcode_test')
+            # يسمح بإدخالات متكررة لكل جهاز/مريض/تحليل لكن كل إدخال له وقت مختلف
+            models.UniqueConstraint(
+                fields=['barcode', 'test', 'insert_datetime'],
+                name='unique_device_barcode_test_time'
+            )
         ]
 
     def __str__(self):
         return f"{self.device_name} - {self.barcode.barcode} - {self.test.name} - {self.result} - {'نشط' if self.is_active else 'غير نشط'}"
+

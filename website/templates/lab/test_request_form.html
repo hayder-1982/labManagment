@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}طلب تحليل جديد - نظام إدارة المختبرات الطبية{% endblock %}
+{% block title %}طلب تحليل جديد - نظام تكنولاب إدارة المختبرات الطبية{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -21,7 +21,7 @@
               <label for="{{ form.patient.id_for_label }}" class="form-label fw-bold">
                 <i class="fas fa-user me-1 text-secondary"></i> المريض *
               </label>
-              {{ form.patient }}-{{form.barcode}}
+              {{ form.patient }}
               {% if form.patient.errors %}
               <div class="invalid-feedback d-block">
                 {% for error in form.patient.errors %} {{ error }} {% endfor %}
@@ -103,16 +103,16 @@
               <div id="price-breakdown">
                 <div class="price-item">
                   <span>التحاليل الفردية:</span>
-                  <span id="individual-total">0 ريال</span>
+                  <span id="individual-total">0 ينار</span>
                 </div>
                 <div class="price-item">
                   <span>مجموعات التحاليل:</span>
-                  <span id="groups-total">0 ريال</span>
+                  <span id="groups-total">0 دينار</span>
                 </div>
                 <hr />
                 <div class="price-item total">
                   <span><strong>الإجمالي:</strong></span>
-                  <span id="grand-total"><strong>0 ريال</strong></span>
+                  <span id="grand-total"><strong>0 دينار</strong></span>
                 </div>
               </div>
             </div>
@@ -213,8 +213,8 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".group-checkbox").forEach(cb => {
       if (cb.checked) groupsTotal += parseFloat(cb.dataset.price);
     });
-    individualTotalEl.textContent = individualTotal + " ريال";
-    groupsTotalEl.textContent = groupsTotal + " ريال";
+    individualTotalEl.textContent = individualTotal + " دينار";
+    groupsTotalEl.textContent = groupsTotal + " دينار";
     grandTotalEl.innerHTML = "<strong>" + (individualTotal + groupsTotal) + " ريال</strong>";
   }
 

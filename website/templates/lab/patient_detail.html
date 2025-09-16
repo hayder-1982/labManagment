@@ -19,12 +19,12 @@
         </a>
         <a href="{% url 'patient_edit' patient.id %}" class="btn btn-warning me-2">
             <i class="fas fa-edit me-1"></i>
-            تعديل البيانات
+            تعديل البيانات المريض
         </a>
-        <a href="{% url 'test_request_create' %}?patient={{ patient.id }}" class="btn btn-success">
+        <!-- <a href="{% url 'test_request_create' %}?patient={{ patient.id }}" class="btn btn-success">
             <i class="fas fa-vial me-1"></i>
             طلب تحليل جديد
-        </a>
+        </a> -->
         <!-- إضافة في قسم الأزرار -->
         <a href="{% url 'patient_barcode_label' patient.id %}" class="btn btn-info">
             <i class="fas fa-qrcode me-1"></i>
@@ -54,7 +54,7 @@
                         {% endif %}
                     </div>
                     <h4 class="mb-1">{{ patient.full_name }}</h4>
-                    <p class="text-muted">{{ patient.national_id }}</p>
+                    <p class="text-muted">{{ patient.barcode }}</p>
                 </div>
                 
                 <div class="patient-info">

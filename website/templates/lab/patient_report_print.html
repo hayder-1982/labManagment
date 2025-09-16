@@ -27,12 +27,22 @@ th, td {
 }
 
 /* عنوان المجموعة */
-.group-header {
-    font-weight: bold;
-    text-align: right;
-    background: #f2f2f2; /* رمادي فاتح للطباعة */
-    -webkit-print-color-adjust: exact;
+.group-header { 
+    font-family: "Times New Roman", Times, serif; /* خط سميك وملفت */
+    font-weight: bold;                               /* عريض */
+    font-size: 16px;                                 /* حجم أكبر للنص */
+    text-align: right;                               /* محاذاة لليمين */
+    background-color: #b4dece;                  /* لون خلفية المجموعة*/     /* لون خلفية رمادي */
+    color: #ffffff;                                  /* نص أبيض لتباين أفضل */
+    padding: 8px 12px;                               /* مساحة داخلية مناسبة */
+    border-radius: 5px;                              /* حواف مستديرة خفيفة */
+    letter-spacing: 1px;                             /* تباعد بين الحروف لزيادة وضوح النص */
+    text-transform: uppercase;                       /* تحويل النص لأحرف كبيرة */
+    -webkit-print-color-adjust: exact;               /* الحفاظ على اللون أثناء الطباعة */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);           /* ظل خفيف لإبراز العنوان */
+    page-break-inside: avoid;                        /* عدم تقسيم العنوان بين الصفحات */
 }
+
 
 /* الهيدر */
 .print-header {
@@ -106,6 +116,10 @@ th, td {
     background: white;
 }
 
+
+
+
+
 /* الطباعة */
 @media print {
     @page {
@@ -123,26 +137,40 @@ th, td {
     .status-high { font-weight: bold; text-decoration: underline; }
     .status-low { font-weight: bold; font-style: italic; }
 }
+/* تأثير hover على صفوف النتائج */
 </style>
+<style>
+/* تأثير striped للصفوف (باستثناء group-header) */
+.table-striped tbody tr:not(.group-header):nth-of-type(odd) {
+    background-color: #f9f9f9; /* لون فاتح للصفوف الفردية */
+}
+
+/* تأثير hover للصفوف (باستثناء group-header) */
+.table-striped tbody tr:not(.group-header):hover {
+    background-color: #f0f8ff; /* لون عند المرور بالماوس */
+    cursor: pointer;
+}
+</style>
+
 </head>
 <body>
 <div class="container">
 
-<table>
+<table class="table table-striped">
     <thead>
         <tr>
             <th colspan="6">
                 <div class="print-header">
-                    <div class="logo">🏥 مختبر التحاليل الطبية</div>
-                    <div class="lab-info">العنوان: شارع الملك فهد، الرياض | الهاتف: 011-1234567 | البريد الإلكتروني: info@medlab.com</div>
+                    <div class="logo">🏥 مختبر الحكيم التحاليل الطبية</div>
+                    <div class="lab-info">العنوان: كربلاء - الملحق | الهاتف: 0096477- | البريد الإلكتروني: haderf@gmail.com</div>
                     <div class="report-title">تقرير نتائج التحاليل الطبية</div>
                 </div>
                 <div class="patient-info">
-                 <div class="info-grid">
+                    <div class="info-grid">
                         <div class="info-item"><span>اسم المريض:</span> <span>{{ patient.full_name }}</span></div>
                         <div class="info-item"><span>العمر:</span> <span>{{ patient.age }} سنة</span></div>
                         <div class="info-item"><span>الجنس:</span> <span>{{ patient.get_gender_display }}</span></div>
-                        <div class="info-item"><span>رقم الهوية:</span> <span>{{ patient.national_id }}</span></div>
+                        <div class="info-item"><span>الباركود:</span> <span>{{ patient.barcode }}</span></div>
                         <div class="info-item"><span>رقم الهاتف:</span> <span>{{ patient.phone_number }}</span></div>
                         <div class="info-item"><span>تاريخ التقرير:</span> <span>{{ report_date|date:"Y/m/d H:i" }}</span></div>
                     </div>
@@ -150,36 +178,36 @@ th, td {
             </th>
         </tr>
         <tr style="border-bottom:1px solid #000;">
-            <th>تاريخ النتيجة</th>
-            <th>المعدل الطبيعي</th>
-            <th>الحالة</th>
-            <th>الوحدة</th>
-            <th>النتيجة</th>
-            <th>اسم التحليل</th>
+            <th dir="ltr" style="text-align: left;">المعدل الطبيعي</th>
+            <th dir="ltr" style="text-align: left;">الوحدة</th>
+            <th dir="ltr" style="text-align: left;">الحالة</th>
+            <th dir="ltr" style="text-align: left;">النتيجة</th>
+            <th dir="ltr" style="text-align: left;">اسم التحليل</th>
         </tr>
     </thead>
 
     {% for group_name, results in results_by_group.items %}
     <tbody class="group-block">
         <tr class="group-header">
-            <td colspan="6">📋 {{ group_name }}</td>
+            <td colspan="6"> {{ group_name }}</td>
         </tr>
         {% for result in results %}
         <tr>
-            <td>{{ result.result_date|date:"Y/m/d" }}</td>
-            <td>{{ result.normal_range }}</td>
-            <td>
+            <td dir="ltr" style="text-align: left;" >{{ result.normal_range }}</td>
+            <td dir="ltr" style="text-align: left;">{{ result.unit }}</td>
+            <td dir="ltr" style="text-align: left;">
                 {% if result.status == 'normal' %}
-                    <span class="status-normal">طبيعي</span>
+
                 {% elif result.status == 'high' %}
-                    <span class="status-high">مرتفع</span>
+                    <span style="color: rgb(17, 17, 17);">&#9650;</span>
                 {% elif result.status == 'low' %}
-                    <span class="status-low">منخفض</span>
+                    <span style="color: rgb(9, 9, 9);">&#9660;</span>
                 {% endif %}
             </td>
-            <td>{{ result.unit }}</td>
-            <td><strong>{{ result.result_value }}</strong></td>
-            <td>{{ result.test_name }}</td>
+            <td  dir="ltr" style="text-align: left;">
+                <strong>{{ result.result_value }}</strong>
+            </td>
+            <td  dir="ltr" style="text-align: left;">{{ result.test_name }}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -199,12 +227,13 @@ th, td {
                     </div>
                 </div>
                 <div class="print-footer">
-                    هذا التقرير صادر من مختبر التحاليل الطبية ومعتمد من وزارة الصحة — تم الإنشاء بتاريخ: {{ report_date|date:"Y/m/d H:i" }}
+                     تم الإنشاء بتاريخ: {{ report_date|date:"Y/m/d H:i" }}
                 </div>
             </td>
         </tr>
     </tfoot>
 </table>
+
 </div>
 </body>
 </html>

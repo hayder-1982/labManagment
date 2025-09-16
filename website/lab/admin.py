@@ -22,16 +22,18 @@ class PatientAdmin(admin.ModelAdmin):
 
 @admin.register(IndividualTest)
 class IndividualTestAdmin(admin.ModelAdmin):
-    list_display = ['name', 'unit', 'normal_value_min', 'normal_value_max', 'price', 'is_active']
+    list_display = ['name', 'app_name','subclass','unit','display_order', 'normal_value_min_m', 'normal_value_max_m', 'normal_value_min_f', 'normal_value_max_f', 'normal_value_m', 'normal_value_f', 'price', 'is_active']
     list_filter = ['is_active', 'created_at']
-    search_fields = ['name', 'description']
+    search_fields = ['name', 'app_name', 'description']
     readonly_fields = ['id', 'created_at', 'updated_at']
+    list_editable = ("display_order",'subclass')
+    ordering = ("display_order",)
     fieldsets = (
         ('معلومات التحليل', {
-            'fields': ('name','app_name', 'description','subclass', 'unit')
+            'fields': ('name','app_name', 'display_order', 'description','subclass', 'unit')
         }),
         ('القيم الطبيعية', {
-            'fields': ('normal_value_min', 'normal_value_max')
+            'fields': ( 'normal_value_min_m', 'normal_value_max_m', 'normal_value_min_f', 'normal_value_max_f', 'normal_value_m', 'normal_value_f',)
         }),
         ('التسعير والحالة', {
             'fields': ('price', 'is_active')
@@ -44,14 +46,14 @@ class IndividualTestAdmin(admin.ModelAdmin):
 
 @admin.register(TestGroup)
 class TestGroupAdmin(admin.ModelAdmin):
-    list_display = ['name', 'total_price', 'is_active', 'created_at']
+    list_display = ['name', 'app_name', 'total_price', 'is_active', 'created_at']
     list_filter = ['is_active', 'created_at']
     search_fields = ['name', 'description']
     filter_horizontal = ['tests']
     readonly_fields = ['id', 'created_at', 'updated_at']
     fieldsets = (
         ('معلومات المجموعة', {
-            'fields': ('name', 'description')
+            'fields': ('name','app_name', 'description')
         }),
         ('التحاليل المتضمنة', {
             'fields': ('tests',)
