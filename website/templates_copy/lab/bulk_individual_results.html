@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% load lab_filters %}
+{% load widget_tweaks %}
+
+{% block title %}إدخال نتائج التحاليل الفردية - نظام تكنولاب{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-flask me-2 text-primary"></i>
+        إدخال نتائج التحاليل الفردية
+    </h1>
+    <a href="{% url 'test_request_detail' test_request.id %}" class="btn btn-outline-secondary rounded-pill">
+        <i class="fas fa-arrow-right me-1"></i> العودة لتفاصيل الطلب
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- بيانات المريض -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 rounded-3 mb-3">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0"><i class="fas fa-user me-2 text-secondary"></i> معلومات المريض</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li><strong>الاسم:</strong> {{ test_request.patient.full_name }}</li>
+                    <li><strong>الباركود:</strong> {{ test_request.patient.barcode }}</li>
+                    <li><strong>العمر:</strong> {{ test_request.patient.age }} سنة</li>
+                    <li><strong>الجنس:</strong> {{ test_request.patient.get_gender_display }}</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- إدخال النتائج -->
+    <div class="col-lg-8">
+         <div class="card shadow-sm border-0 rounded-3">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2 text-secondary"></i> معلومات الطلب</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>رقم الطلب:</strong> #{{ test_request.id|stringformat:"s"|slice:":8" }}</p>
+                <p><strong>تاريخ الطلب:</strong> {{ test_request.request_date|date:"Y/m/d" }}</p>
+                <p><strong>الحالة:</strong>
+                    {% if test_request.status == 'pending' %}
+                        <span class="badge bg-warning text-dark">قيد الانتظار</span>
+                    {% elif test_request.status == 'in_progress' %}
+                        <span class="badge bg-info text-dark">قيد التنفيذ</span>
+                    {% elif test_request.status == 'completed' %}
+                        <span class="badge bg-success">مكتملة</span>
+                    {% elif test_request.status == 'cancelled' %}
+                        <span class="badge bg-danger">ملغية</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="card shadow-sm border-0 rounded-3">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0"><i class="fas fa-edit me-2 text-secondary"></i> إدخال النتائج</h5>
+            </div>
+            <div class="card-body">
+                {% if form.get_test_fields %}
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    <table class="table table-hover align-middle" dir="ltr">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 20%">Test</th>
+                                <th style="width: 15%">Value</th>
+                                <th style="width: 15%">range</th>
+                                <th style="width: 10%">Unit</th>
+                                <th style="width: 7%">Status</th>
+                                <th style="width: 8%">Status</th>
+                                <th style="width: 25%">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for test_field in form.get_test_fields %}
+                            <tr>
+                                <!-- Test name -->
+                                <td>
+                                    <i class="fas fa-vial text-primary me-2"></i> {{ test_field.test.name }}
+                                </td>
+
+                                <!-- Value -->
+                                 <td>{{ test_field.value_field|add_class:"value-input" }}</td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text small text-muted normal-range"
+                                              data-min-m="{{ test_field.test.normal_value_min_m }}"
+                                              data-max-m="{{ test_field.test.normal_value_max_m }}"
+                                              data-min-f="{{ test_field.test.normal_value_min_f }}"
+                                              data-max-f="{{ test_field.test.normal_value_max_f }}"
+                                              style="white-space: pre-line;">
+                                            {% if test_request.patient.gender == 'M' %}
+                                                {% if test_field.test.normal_value_min_m and test_field.test.normal_value_max_m %}
+                                                    {{ test_field.test.normal_value_min_m }} - {{ test_field.test.normal_value_max_m }}
+                                                {% elif test_field.test.normal_value_m %}
+                                                    {{ test_field.test.normal_value_m }}
+                                                {% endif %}
+                                            {% else %}
+                                                {% if test_field.test.normal_value_min_f and test_field.test.normal_value_max_f %}
+                                                    {{ test_field.test.normal_value_min_f }} - {{ test_field.test.normal_value_max_f }}
+                                                {% elif test_field.test.normal_value_f %}
+                                                    {{ test_field.test.normal_value_f }}
+                                                {% endif %}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="text-danger small">{{ test_field.value_field.errors }}</div>
+                                </td>
+
+                                <!-- Unit -->
+                                 <td><span class="text-muted">{{ test_field.test.unit }}</span></td>
+                                <td>
+                                    
+                                    {% if test_field.existing_result %}
+                                        <span class="badge bg-info small ms-2">Updated</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary small ms-2">New</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Status -->
+                                <td class="status-cell text-center"></td>
+
+                                <!-- Notes -->
+                                <td>
+                                    {{ test_field.notes_field|add_class:"form-control form-control-sm" }}
+                                    <div class="text-danger small">{{ test_field.notes_field.errors }}</div>
+
+                                    {% if test_field.existing_result %}
+                                        <div class="mt-1 small text-muted">
+                                            <i class="fas fa-user-edit text-info"></i>
+                                            آخر تعديل: 
+                                            {% if test_field.existing_result.last_modified_by %}
+                                                {{ test_field.existing_result.last_modified_by.username }}
+                                            {% else %}
+                                                غير معروف
+                                            {% endif %}
+                                        </div>
+                                        <div class="small text-muted">
+                                            <i class="fas fa-user text-secondary"></i>
+                                            أدخل بواسطة: 
+                                            {% if test_field.existing_result.entered_by %}
+                                                {{ test_field.existing_result.entered_by.username }}
+                                            {% else %}
+                                                غير معروف
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <div class="mt-1 small text-muted">
+                                            <i class="fas fa-user text-secondary"></i>
+                                            سيتم الإدخال بواسطة: {{ request.user.username }}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <!-- الأزرار -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'test_request_detail' test_request.id %}" class="btn btn-outline-secondary rounded-pill">
+                            <i class="fas fa-times me-1"></i> إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-success rounded-pill px-4">
+                            <i class="fas fa-save me-1"></i> حفظ النتائج
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                    <div class="alert alert-warning text-center rounded-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        لا توجد تحاليل فردية مرتبطة بهذا الطلب.
+                    </div>
+                    <div class="text-center">
+                        <a href="{% url 'test_request_detail' test_request.id %}" class="btn btn-outline-secondary rounded-pill">
+                            <i class="fas fa-arrow-right me-1"></i> العودة لتفاصيل الطلب
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    function checkValue(input) {
+        const value = parseFloat(input.value);
+        const row = input.closest("tr");
+        const statusCell = row.querySelector(".status-cell");
+        const span = row.querySelector(".normal-range");
+
+        statusCell.innerHTML = "";
+
+        if (!isNaN(value)) {
+            let min = NaN, max = NaN;
+            const gender = "{{ test_request.patient.gender }}";
+
+            if (gender === "M") {
+                min = parseFloat(span.dataset.minM);
+                max = parseFloat(span.dataset.maxM);
+            } else {
+                min = parseFloat(span.dataset.minF);
+                max = parseFloat(span.dataset.maxF);
+            }
+
+            if (!isNaN(min) && !isNaN(max)) {
+                if (value < min) {
+                    statusCell.innerHTML = '<span class="badge bg-warning text-dark">منخفض</span>';
+                } else if (value > max) {
+                    statusCell.innerHTML = '<span class="badge bg-danger">مرتفع</span>';
+                } else {
+                    statusCell.innerHTML = '<span class="badge bg-success">طبيعي</span>';
+                }
+            }
+        }
+    }
+
+    document.querySelectorAll("input.value-input").forEach(input => {
+        checkValue(input);
+        input.addEventListener("input", function() {
+            checkValue(this);
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     # Third party
     'rest_framework',
     'crispy_forms',
-
+     'crispy_bootstrap4',
     # Own
     'core.apps.CoreConfig',
     'lab',
@@ -87,10 +87,25 @@ WSGI_APPLICATION = 'website.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'techlab',        # اسم قاعدة البيانات
+        'USER': 'techlab',      # اسم المستخدم
+        'PASSWORD': 'root',  # كلمة المرور
+        'HOST': '127.0.0.1',     # أو IP السيرفر
+        'PORT': '3306',          # المنفذ الافتراضي لـ MySQL
+        'OPTIONS': {
+            'charset': 'utf8mb4',   # لدعم اللغة العربية والرموز
+        },
     }
 }
 

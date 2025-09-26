@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -17,6 +19,11 @@ body {
 table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 12px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
 }
 
 th, td {
@@ -25,22 +32,39 @@ th, td {
     font-size: 13px;
     border: none; /* بدون حدود */
 }
+th, td {
+    padding: 6px;
+    text-align: center;
+    border: none; /* لا حدود للخلايا */
+}
 
+tr {
+    border-bottom: 1px dashed #555; /* خط مقطع */
+}
+
+thead tr {
+    border-bottom: 2px solid #000; /* خط ثابت للهيدر */
+}
+
+tfoot tr {
+    border-top: 2px solid #000; /* خط ثابت للفوتر */
+}
+
+/* تأثير hover */
+tbody tr:hover {
+    background-color: #f5f5f5; /* خلفية خفيفة عند المرور */
+    cursor: pointer;
+}
 /* عنوان المجموعة */
-.group-header { 
-    font-family: "Times New Roman", Times, serif; /* خط سميك وملفت */
-    font-weight: bold;                               /* عريض */
-    font-size: 16px;                                 /* حجم أكبر للنص */
-    text-align: right;                               /* محاذاة لليمين */
-    background-color: #b4dece;                  /* لون خلفية المجموعة*/     /* لون خلفية رمادي */
-    color: #ffffff;                                  /* نص أبيض لتباين أفضل */
-    padding: 8px 12px;                               /* مساحة داخلية مناسبة */
-    border-radius: 5px;                              /* حواف مستديرة خفيفة */
-    letter-spacing: 1px;                             /* تباعد بين الحروف لزيادة وضوح النص */
-    text-transform: uppercase;                       /* تحويل النص لأحرف كبيرة */
-    -webkit-print-color-adjust: exact;               /* الحفاظ على اللون أثناء الطباعة */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);           /* ظل خفيف لإبراز العنوان */
-    page-break-inside: avoid;                        /* عدم تقسيم العنوان بين الصفحات */
+.group-header span{
+    font-family: "Bradley Hand ITC", Times, serif;
+    font-size: 16px;
+    font-weight: bold;
+                 /* محاذاة لليسار */
+    background-color: #d9d9d9;     /* خلفية رصاصي */
+    color: #000;                   /* نص أسود */
+    padding: 6px;                  /* مسافة داخلية */
+    -webkit-print-color-adjust: exact; /* الحفاظ على اللون عند الطباعة */
 }
 
 
@@ -189,11 +213,11 @@ th, td {
     {% for group_name, results in results_by_group.items %}
     <tbody class="group-block">
         <tr class="group-header">
-            <td colspan="6"> {{ group_name }}</td>
+            <td style=" text-align: left;" colspan="6"> <span>{{ group_name }}</span></td>
         </tr>
         {% for result in results %}
         <tr>
-            <td dir="ltr" style="text-align: left;" >{{ result.normal_range }}</td>
+            <td dir="ltr" style="text-align: left;" >{{ result.normal_range|linebreaksbr }}</td>
             <td dir="ltr" style="text-align: left;">{{ result.unit }}</td>
             <td dir="ltr" style="text-align: left;">
                 {% if result.status == 'normal' %}

@@ -87,20 +87,11 @@
                             <td>{{ result.value|default:"-" }} </td>
                             <td>{{ test.unit }}</td>
                             <td>
-                                {% if test_request.patient.gender == "M" %}
-                                    {% if test.normal_value_min_m and test.normal_value_max_m %}
-                                        {{ test.normal_value_min_m }} - {{ test.normal_value_max_m }}
-                                    {% else %}
-                                        {{ test.normal_value_m|linebreaksbr }}
-                                    {% endif %}
+                                {% if test_request.patient.gender == 'M' %}
+                                    {{ test.normal_value_min_m }} - {{ test.normal_value_max_m|default:test.normal_value_m }}
                                 {% else %}
-                                    {% if test.normal_value_min_f and test.normal_value_max_f %}
-                                        {{ test.normal_value_min_f }} - {{ test.normal_value_max_f }}
-                                    {% else %}
-                                        {{ test.normal_value_f|linebreaksbr }}
-                                    {% endif %}
+                                    {{ test.normal_value_min_f }} - {{ test.normal_value_max_f|default:test.normal_value_f }}
                                 {% endif %}
-
                             </td>
                             <td>
                                 {% if result %}

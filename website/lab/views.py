@@ -9,6 +9,54 @@ from django.utils import timezone
 from .models import Patient, IndividualTest, TestGroup, TestRequest, IndividualTestResult, TestGroupResult,DeviceResult
 from .forms import PatientForm, TestRequestForm, IndividualTestResultForm, BulkIndividualTestResultForm, BulkTestGroupResultForm
 
+from datetime import datetime, timedelta
+from django.db.models import Count
+from django.shortcuts import render
+from django.utils import timezone   # ✅ مهم
+
+import qrcode
+import barcode
+from barcode.writer import ImageWriter
+from io import BytesIO
+import base64
+import json
+from django.utils import timezone
+
+import base64
+from io import BytesIO
+import barcode
+from barcode.writer import ImageWriter
+
+import barcode
+from barcode.writer import SVGWriter
+from io import BytesIO
+import base64
+
+from django.utils import timezone
+from django.shortcuts import redirect
+from django.contrib import messages
+from lab.models import DeviceResult, IndividualTestResult, TestRequest
+
+from django.shortcuts import redirect
+from django.contrib import messages
+from .models import DeviceResult, IndividualTestResult, TestRequest
+
+
+# views.py
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from .models import TestRequest, Patient
+
+from .models import IndividualTestResult
+
+# views.py
+from .models import TestGroup  # تأكد الاستيراد موجود
+from django.shortcuts import redirect
+from django.contrib import messages
+
+
+
+
 def home(request):
     """الصفحة الرئيسية"""
     # إحصائيات سريعة
@@ -39,8 +87,7 @@ def patient_list(request):
     if search_query:
         patients = patients.filter(
             Q(full_name__icontains=search_query) |
-            # Q(national_id__icontains=search_query) |
-            Q(phone_number__icontains=search_query)
+            Q(barcode__icontains=search_query)
         )
     
     paginator = Paginator(patients, 20)
@@ -186,7 +233,6 @@ def test_request_create(request, patient_id=None):
     return render(request, 'lab/test_request_form.html', context)
 
 @login_required
-@login_required
 def add_test_result(request, request_id, test_id):
     """إضافة أو تعديل نتيجة تحليل فردي"""
     test_request = get_object_or_404(TestRequest, id=request_id)
@@ -226,36 +272,6 @@ def add_test_result(request, request_id, test_id):
     }
     return render(request, 'lab/test_result_form.html', context)
 
-# def add_test_result(request, request_id, test_id):
-#     """إضافة نتيجة تحليل فردي"""
-#     test_request = get_object_or_404(TestRequest, id=request_id)
-#     individual_test = get_object_or_404(IndividualTest, id=test_id)
-    
-#     # التحقق من وجود النتيجة مسبقاً
-#     existing_result = IndividualTestResult.objects.filter(test_request=test_request,
-#         individual_test=individual_test).first()
-    
-#     if request.method == 'POST':
-#         form = IndividualTestResultForm(request.POST, instance=existing_result)
-#         if form.is_valid():
-#             result = form.save(commit=False)
-#             result.test_request = test_request
-#             result.individual_test = individual_test
-#             result.entered_by = request.user
-#             result.save()
-            
-#             messages.success(request, f'تم حفظ نتيجة تحليل {individual_test.name} بنجاح')
-#             return redirect('test_request_detail', request_id=test_request.id)
-#     else:
-#         form = IndividualTestResultForm(instance=existing_result)
-    
-#     context = {
-#         'form': form,
-#         'test_request': test_request,
-#         'individual_test': individual_test,
-#         'existing_result': existing_result,
-#     }
-#     return render(request, 'lab/test_result_form.html', context)
 
 @login_required
 def search_patients_ajax(request):
@@ -279,27 +295,38 @@ def search_patients_ajax(request):
     
     return JsonResponse({'results': patients})
 
-@login_required
 
+
+@login_required
 def reports(request):
     """صفحة التقارير مع إمكانية التصفية بين تاريخين"""
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
-    # الطلبات
     queryset = TestRequest.objects.all()
 
     if start_date and end_date:
-        queryset = queryset.filter(request_date__date__range=[start_date, end_date])
+        try:
+            # تحويل النصوص إلى datetime
+            start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
+            end_date_obj = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
+
+            # ✅ تحويلهم إلى timezone-aware
+            start_date_obj = timezone.make_aware(start_date_obj, timezone.get_current_timezone())
+            end_date_obj = timezone.make_aware(end_date_obj, timezone.get_current_timezone())
+
+            queryset = queryset.filter(request_date__range=[start_date_obj, end_date_obj])
+        except ValueError:
+            pass
 
     # إحصائيات عامة
-    total_patients = queryset.values("patient").distinct().count()
+    total_patients = queryset.aggregate(count=Count('patient', distinct=True))['count'] or 0
     total_requests = queryset.count()
-    
+
     # إحصائيات حسب الحالة
     status_stats = queryset.values('status').annotate(count=Count('id'))
-    
-    # أكثر التحاليل طلباً ✅ حسب الفترة
+
+    # أكثر التحاليل طلباً
     popular_tests = (
         IndividualTest.objects.filter(individualtestresult__test_request__in=queryset)
         .annotate(request_count=Count('individualtestresult'))
@@ -421,13 +448,22 @@ def patient_report(request, patient_id):
     for result in individual_results:
         test = result.individual_test
 
-        # اختيار القيم الطبيعية حسب جنس المريض
-        if patient.gender == "M":  # رجال
-            normal_min = test.normal_value_min_m or test.normal_value_m
-            normal_max = test.normal_value_max_m or test.normal_value_m
-        else:  # نساء
-            normal_min = test.normal_value_min_f or test.normal_value_f
-            normal_max = test.normal_value_max_f or test.normal_value_f
+                # اختيار القيم الطبيعية حسب الجنس
+        if patient.gender == "M":
+            if test.normal_value_min_m and test.normal_value_max_m:
+                normal_min = test.normal_value_min_m
+                normal_max = test.normal_value_max_m
+            else:
+                normal_min = test.normal_value_m
+                normal_max = ''
+        else:  # F
+            if test.normal_value_min_f and test.normal_value_max_f:
+                normal_min = test.normal_value_min_f
+                normal_max = test.normal_value_max_f
+            else:
+                normal_min = ''
+                normal_max = test.normal_value_f
+                
 
         # تجهيز النطاق الطبيعي بشكل أنيق
         if normal_min and normal_max:
@@ -492,10 +528,6 @@ def patient_report(request, patient_id):
     return render(request, 'lab/patient_report.html', context)
 
 
-
-# def patient_report_print(request, patient_id):
-#     """تقرير نتائج المريض للطباعة"""
-#     from .models import PrintedReport
 @login_required
 def patient_report_print(request, patient_id):
     """تقرير نتائج المريض للطباعة مع ترتيب التحاليل حسب display_order"""
@@ -534,12 +566,21 @@ def patient_report_print(request, patient_id):
         )
 
         # اختيار القيم الطبيعية حسب الجنس
-        if patient.gender == "male":
-            normal_min = test.normal_value_min_m or test.normal_value_m
-            normal_max = test.normal_value_max_m or test.normal_value_m
-        else:
-            normal_min = test.normal_value_min_f or test.normal_value_f
-            normal_max = test.normal_value_max_f or test.normal_value_f
+        if patient.gender == "M":
+            if test.normal_value_min_m and test.normal_value_max_m:
+                normal_min = test.normal_value_min_m
+                normal_max = test.normal_value_max_m
+            else:
+                normal_min = test.normal_value_m
+                normal_max = ''
+        else:  # F
+            if test.normal_value_min_f and test.normal_value_max_f:
+                normal_min = test.normal_value_min_f
+                normal_max = test.normal_value_max_f
+            else:
+                normal_min = ''
+                normal_max = test.normal_value_f
+                
 
         if group_key not in results_by_description:
             results_by_description[group_key] = []
@@ -586,96 +627,6 @@ def patient_report_print(request, patient_id):
     return render(request, 'lab/patient_report_print.html', context)
 
 
-
-
-#     patient = get_object_or_404(Patient, id=patient_id)
-    
-#     # تسجيل الطباعة
-#     PrintedReport.objects.create(patient=patient, printed_by=request.user, report_type='patient_report')
-    
-#     # جلب جميع طلبات التحاليل للمريض
-#     test_requests = TestRequest.objects.filter(patient=patient).order_by('-request_date')
-    
-#     # جلب جميع النتائج الفردية للمريض
-#     individual_results = IndividualTestResult.objects.filter(
-#         test_request__patient=patient).select_related('individual_test', 'test_request').order_by('-result_date')
-
-#     # جلب جميع نتائج المجموعات للمريض
-#     group_results = TestGroupResult.objects.filter(
-#         test_request__patient=patient).select_related('test_group', 'test_request').order_by('-result_date')
-#     # تنظيم النتائج حسب الوصف (description)
-#     results_by_description = {}
-    
-#     # إضافة النتائج الفردية
-#     for result in individual_results:
-#         # استخدام الوصف كمفتاح التجميع، أو اسم التحليل إذا لم يكن هناك وصف
-#         # group_key = result.individual_test.description.strip() if result.individual_test.description.strip() else result.individual_test.name
-#         group_key = (
-#         result.individual_test.subclass.strip() 
-#         if result.individual_test.subclass.strip() 
-#         else result.individual_test.description.strip() 
-#         if result.individual_test.description.strip() 
-#         else result.individual_test.name
-#         )
-#         if group_key not in results_by_description:
-#             results_by_description[group_key] = []
-#         results_by_description[group_key].append({
-#             'test_name': result.individual_test.name,
-#             'result_value': result.value,
-#             'unit': result.individual_test.unit,
-#             'normal_range': f"{result.individual_test.normal_value_min or ''} - {result.individual_test.normal_value_max or ''}".strip(' -'),
-#             'status': result.status,
-#             'result_date': result.result_date,
-#             'test_request': result.test_request,
-#         })
-    
-#     # إضافة نتائج المجموعات
-#     for result in group_results:
-#         group_key = result.test_group.description.strip() if result.test_group.description.strip() else result.test_group.name
-#         print('---------',group_key)
-#         if group_key not in results_by_description:
-#             results_by_description[group_key] = []
-#         # نحتاج إلى جلب النتائج الفردية لهذه المجموعة
-#         # لأن TestGroupResult لا يحتوي على نتائج فردية مباشرة
-#         # سنعرض معلومات المجموعة فقط
-#         results_by_description[group_key].append({
-#             'test_name': result.test_group.name,
-#             'result_value': 'مجموعة تحاليل',
-#             'unit': '',
-#             'normal_range': '',
-#             'status': result.status,
-#             'result_date': result.result_date,
-#             'test_request': result.test_request,
-#         })
-    
-#     context = {
-#         'patient': patient,
-#         'test_requests': test_requests,
-#         'results_by_group': results_by_description,
-#         'report_date': timezone.now(),
-#     }
-    
-#     return render(request, 'lab/patient_report_print.html', context)
-
-
-# ----------------------------
-import qrcode
-import barcode
-from barcode.writer import ImageWriter
-from io import BytesIO
-import base64
-import json
-from django.utils import timezone
-
-import base64
-from io import BytesIO
-import barcode
-from barcode.writer import ImageWriter
-
-import barcode
-from barcode.writer import SVGWriter
-from io import BytesIO
-import base64
 
 
 @login_required
@@ -841,14 +792,7 @@ def generate_patient_barcode_label_data(patient, test_request=None):
 
 
 
-from django.utils import timezone
-from django.shortcuts import redirect
-from django.contrib import messages
-from lab.models import DeviceResult, IndividualTestResult, TestRequest
 
-from django.shortcuts import redirect
-from django.contrib import messages
-from .models import DeviceResult, IndividualTestResult, TestRequest
 
 def update_device_results(request):
     # print('run this method update_device_results-------')
@@ -860,30 +804,23 @@ def update_device_results(request):
     updated_count = 0
 
     for device_result in active_results:
-        print('device_result', device_result.barcode)
-
+        # print('device_result', device_result.barcode)
         # ✅ إيجاد أحدث طلب تحليل يحتوي على هذا التحليل للمريض
-        test_request = TestRequest.objects.filter(
-            patient=device_result.barcode,
-            individual_tests=device_result.test
-        ).order_by('-request_date').first()
+        test_request = TestRequest.objects.filter(patient=device_result.barcode, individual_tests=device_result.test
+                                                            ).order_by('-request_date').first()
 
         # ✅ إذا لم يوجد في individual_tests، نبحث في test_groups
         if not test_request:
-            test_request = TestRequest.objects.filter(
-                patient=device_result.barcode,
-                test_groups__tests=device_result.test
-            ).order_by('-request_date').first()
+            test_request = TestRequest.objects.filter(patient=device_result.barcode,test_groups__tests=device_result.test
+                                                             ).order_by('-request_date').first()
 
 
         if not test_request:
             continue  # إذا لا يوجد طلب تحليل، تخطي
 
         # ✅ التحقق من وجود نتيجة سابقة لنفس التحليل في الطلب
-        latest_result = IndividualTestResult.objects.filter(
-            test_request=test_request,
-            individual_test=device_result.test
-        ).order_by('-result_date').first()
+        latest_result = IndividualTestResult.objects.filter(test_request=test_request,individual_test=device_result.test
+                                                                 ).order_by('-result_date').first()
 
         if latest_result:
             # تحديث فقط إذا كانت النتيجة الجديدة أحدث
@@ -895,13 +832,9 @@ def update_device_results(request):
                 updated_count += 1
         else:
             # إدخال نتيجة جديدة
-            IndividualTestResult.objects.create(
-                test_request=test_request,
-                individual_test=device_result.test,
-                value=device_result.result,
-                result_date=device_result.insert_datetime,
-                entered_by=request.user if request.user.is_authenticated else None
-            )
+            IndividualTestResult.objects.create(test_request=test_request,individual_test=device_result.test,value=device_result.result,
+                result_date=device_result.insert_datetime,entered_by=request.user if request.user.is_authenticated else None
+                )
             updated_count += 1
 
         # ✅ تعطيل النتيجة في DeviceResult
@@ -911,3 +844,262 @@ def update_device_results(request):
     # رسالة نجاح
     # messages.success(request, f"{updated_count} نتيجة تم تحديثها بنجاح.")
     return redirect(request.META.get('HTTP_REFERER', '/'))
+
+
+
+
+def delete_individual_test(request, patient_id, request_id, test_id):
+    """حذف تحليل فردي من طلب تحليل معين + حذف نتيجته إذا كانت موجودة"""
+    patient = get_object_or_404(Patient, id=patient_id)
+    test_request = get_object_or_404(TestRequest, id=request_id, patient=patient)
+    test = get_object_or_404(IndividualTest, id=test_id)
+
+    if request.method == "POST":
+        # نحذف النتيجة إذا موجودة
+        IndividualTestResult.objects.filter(test_request=test_request,individual_test=test).delete()
+        # نحذف التحليل من الطلب
+        test_request.individual_tests.remove(test)
+        # ✅ إذا صار الطلب فارغ (ما فيه تحاليل ولا مجموعات) نحذفه بالكامل
+        if test_request.individual_tests.count() == 0 and test_request.test_groups.count() == 0:
+            test_request.delete()
+            messages.success(request, f"تم حذف التحليل ({test.name}) وحذف الطلب لأنه أصبح فارغ ✅")
+        else:
+            messages.success(request, f"تم حذف التحليل ({test.name}) من الطلب ✅")
+
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+
+
+def delete_test_group(request, patient_id, request_id, group_id):
+    """حذف مجموعة تحاليل من طلب تحليل معين + حذف نتائجها"""
+    patient = get_object_or_404(Patient, id=patient_id)
+    test_request = get_object_or_404(TestRequest, id=request_id, patient=patient)
+    group = get_object_or_404(TestGroup, id=group_id)
+
+    if request.method == "POST":
+        # نحذف نتائج جميع التحاليل المرتبطة بالمجموعة
+        # إذا كان عندك علاقة group.tests أو group.individual_tests استعمل الاسم الصحيح
+        for test in getattr(group, "tests", getattr(group, "individual_tests", None)).all():
+            IndividualTestResult.objects.filter(test_request=test_request,individual_test=test).delete()
+
+        # نحذف المجموعة من الطلب
+        test_request.test_groups.remove(group)
+
+        # ✅ إذا صار الطلب فارغ نحذفه
+        if test_request.individual_tests.count() == 0 and test_request.test_groups.count() == 0:
+            test_request.delete()
+            messages.success(request, f"تم حذف المجموعة ({group.name}) وحذف الطلب لأنه أصبح فارغ ✅")
+        else:
+            messages.success(request, f"تم حذف المجموعة ({group.name}) من الطلب ✅")
+
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+def delete_individual_test_result(request, patient_id, request_id, test_id):
+    """حذف نتيجة تحليل فردي فقط (من IndividualTestResult)"""
+    patient = get_object_or_404(Patient, id=patient_id)
+    test_request = get_object_or_404(TestRequest, id=request_id, patient=patient)
+    test = get_object_or_404(IndividualTest, id=test_id)
+
+    if request.method == "POST":
+        # حذف النتيجة فقط
+        IndividualTestResult.objects.filter(
+            test_request=test_request,
+            individual_test=test
+        ).delete()
+        test_request.check_completion_status()  # ✅ تحديث الحالة
+        messages.success(request, f"تم حذف نتيجة التحليل ({test.name}) فقط ✅")
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+def delete_test_group_results(request, patient_id, request_id, group_id):
+    """حذف نتائج كل التحاليل المرتبطة بمجموعة معينة فقط"""
+    patient = get_object_or_404(Patient, id=patient_id)
+    test_request = get_object_or_404(TestRequest, id=request_id, patient=patient)
+    group = get_object_or_404(TestGroup, id=group_id)
+
+    if request.method == "POST":
+        # حذف نتائج التحاليل التابعة للمجموعة
+        for test in getattr(group, "tests", getattr(group, "individual_tests", None)).all():
+            IndividualTestResult.objects.filter(
+                test_request=test_request,
+                individual_test=test
+            ).delete()
+        test_request.check_completion_status()  # ✅ تحديث الحالة
+        messages.success(request, f"تم حذف نتائج المجموعة ({group.name}) فقط ✅")
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from weasyprint import HTML, CSS
+import tempfile
+from .models import TestRequest, IndividualTestResult
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
+
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from weasyprint import HTML, CSS
+import tempfile
+from .models import TestRequest, IndividualTestResult, Patient
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
+from django.utils.text import slugify
+
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from weasyprint import HTML, CSS
+from django.utils.text import slugify
+import tempfile
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
+
+from .models import Patient, TestRequest, IndividualTestResult, TestGroupResult
+
+@login_required
+def generate_report_pdf(request, patient_id):
+    """توليد تقرير PDF لنتائج المريض"""
+    patient = get_object_or_404(Patient, id=patient_id)
+
+    # جلب جميع طلبات التحاليل
+    test_requests = TestRequest.objects.filter(patient=patient).order_by('-request_date')
+
+    if not test_requests.exists():
+        return HttpResponse("لا يوجد طلبات فحص لهذا المريض.", status=404)
+
+    # جلب جميع النتائج الفردية
+    individual_results = IndividualTestResult.objects.filter(
+        test_request__patient=patient
+    ).select_related('individual_test', 'test_request').order_by('-result_date')
+
+    # جلب جميع نتائج المجموعات
+    group_results = TestGroupResult.objects.filter(
+        test_request__patient=patient
+    ).select_related('test_group', 'test_request').order_by('-result_date')
+
+    # تنظيم النتائج حسب subclass أو description
+    results_by_group = {}
+
+    for result in individual_results:
+        test = result.individual_test
+
+        # اختيار التصنيف المناسب للتجميع
+        group_key = (
+            test.subclass.strip()
+            if test.subclass and test.subclass.strip()
+            else test.description.strip()
+            if test.description and test.description.strip()
+            else test.name
+        )
+
+        # تحديد القيم الطبيعية حسب الجنس
+        if patient.gender == "M":
+            normal_min = test.normal_value_min_m or test.normal_value_m or ''
+            normal_max = test.normal_value_max_m or ''
+        else:
+            normal_min = test.normal_value_min_f or ''
+            normal_max = test.normal_value_max_f or test.normal_value_f or ''
+
+        # إعداد النطاق الطبيعي
+        if normal_min and normal_max:
+            normal_range = f"{normal_min} - {normal_max}"
+        elif normal_min:
+            normal_range = str(normal_min)
+        elif normal_max:
+            normal_range = str(normal_max)
+        else:
+            normal_range = ""
+
+        if group_key not in results_by_group:
+            results_by_group[group_key] = []
+
+        results_by_group[group_key].append({
+            'test_name': test.name,
+            'result_value': result.value,
+            'unit': test.unit,
+            'normal_range': normal_range,
+            'status': result.status,
+            'result_date': result.result_date,
+            'display_order': getattr(test, 'display_order', 0),
+        })
+
+    # إضافة نتائج المجموعات
+    for result in group_results:
+        group_key = result.test_group.description.strip() if result.test_group.description.strip() else result.test_group.name
+
+        if group_key not in results_by_group:
+            results_by_group[group_key] = []
+
+        results_by_group[group_key].append({
+            'test_name': result.test_group.name,
+            'result_value': 'مجموعة تحاليل',
+            'unit': '',
+            'normal_range': '',
+            'status': result.status,
+            'result_date': result.result_date,
+            'display_order': 9999,  # دائماً في الأخير
+        })
+
+    # ترتيب كل مجموعة حسب display_order
+    for group_key, items in results_by_group.items():
+        results_by_group[group_key] = sorted(items, key=lambda x: x['display_order'])
+
+    # إنشاء HTML من القالب
+    html_string = render_to_string('lab/patient_report_print.html', {
+        "patient": patient,
+        "results_by_group": results_by_group,
+        "report_date": timezone.now()
+    })
+
+    # إنشاء PDF
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as output:
+        HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf(
+            output.name,
+            stylesheets=[CSS(string='@page { size: A4; margin: 2cm 1.5cm; }')]
+        )
+        output.seek(0)
+        pdf_data = output.read()
+
+    filename = f"report_{slugify(patient.full_name)}.pdf"
+    #/patients/26/report/print/
+    response = HttpResponse(pdf_data, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    return response
+
+
+# views.py
+from django.shortcuts import get_object_or_404, redirect
+from urllib.parse import quote
+from .models import Patient
+
+def send_report_whatsapp(request, patient_id):
+    """توليد رابط رسالة WhatsApp تحتوي على رابط التقرير وتحويل المستخدم إليه"""
+    patient = get_object_or_404(Patient, id=patient_id)
+
+    # رقم الجوال بصيغة دولية بدون "+" مثل: 9665XXXXXXX
+    phone_number = patient.phone_number
+    if not phone_number:
+        return HttpResponse("رقم الهاتف غير متوفر.", status=400)
+
+    # رابط التقرير PDF المباشر (تأكد أن هذا يعمل)
+    report_link = request.build_absolute_uri(f"/report/pdf/{patient.id}/")
+
+    message = f"مرحباً {patient.full_name}،\nرابط تحميل تقرير التحاليل الخاص بك:\n{report_link}"
+
+    whatsapp_url = f"https://wa.me/{phone_number}?text={quote(message)}"
+    return redirect(whatsapp_url)
+
+
+
+

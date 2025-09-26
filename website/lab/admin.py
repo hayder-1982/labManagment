@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Patient, IndividualTest, TestGroup, TestRequest, IndividualTestResult, TestGroupResult
+from .models import Patient, IndividualTest, TestGroup, TestRequest, IndividualTestResult, TestGroupResult,DeviceResult
 
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
@@ -22,11 +22,11 @@ class PatientAdmin(admin.ModelAdmin):
 
 @admin.register(IndividualTest)
 class IndividualTestAdmin(admin.ModelAdmin):
-    list_display = ['name', 'app_name','subclass','unit','display_order', 'normal_value_min_m', 'normal_value_max_m', 'normal_value_min_f', 'normal_value_max_f', 'normal_value_m', 'normal_value_f', 'price', 'is_active']
+    list_display = ['name', 'app_name','subclass','unit','display_order', 'price', 'is_active']
     list_filter = ['is_active', 'created_at']
     search_fields = ['name', 'app_name', 'description']
     readonly_fields = ['id', 'created_at', 'updated_at']
-    list_editable = ("display_order",'subclass')
+    list_editable = ("display_order",'subclass','is_active')
     ordering = ("display_order",)
     fieldsets = (
         ('معلومات التحليل', {
@@ -146,6 +146,29 @@ class TestGroupResultAdmin(admin.ModelAdmin):
         ('معلومات النظام', {
             'fields': ('id', 'result_date'),
             'classes': ('collapse',)
+        })
+    )
+
+
+
+# admin.site.register(DeviceResult)
+@admin.register(DeviceResult)
+class TestGroupResultAdmin(admin.ModelAdmin):
+    list_display = ['device_name', 'barcode', 'test', 'result', 'insert_datetime', 'is_active']
+    list_filter = ['device_name', 'barcode', 'test']
+    search_fields = ['device_name', 'barcode', 'test']
+    # readonly_fields = ['id', 'insert_datetime']
+    
+    fieldsets = (
+        ('معلومات ', {
+            'fields': ('device_name', 'barcode', 'test')
+        }),
+        (' النتيجة', {
+            'fields': ('result',)
+        }),
+        ('معلومات النظام', {
+            'fields': ('is_active',),
+            # 'classes': ('collapse',)
         })
     )
 

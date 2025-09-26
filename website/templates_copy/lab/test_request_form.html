@@ -1,8 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}
-  {% if test_request %} تعديل طلب التحليل {% else %} طلب تحليل جديد {% endif %} - نظام تكنولاب
-{% endblock %}
+{% block title %}طلب تحليل جديد - نظام تكنولاب إدارة المختبرات الطبية{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -10,8 +8,7 @@
     <div class="card shadow-sm">
       <div class="card-header bg-light">
         <h5 class="card-title mb-0">
-          <i class="fas {% if test_request %}fa-edit text-warning{% else %}fa-plus text-primary{% endif %} me-2"></i>
-          {% if test_request %} تعديل طلب التحليل {% else %} طلب تحليل جديد {% endif %}
+          <i class="fas fa-plus me-2 text-primary"></i> طلب تحليل جديد
         </h5>
       </div>
       <div class="card-body">
@@ -55,17 +52,13 @@
                   <hr class="my-1">
                   <div class="chips-container">
                     {% for test in group.list %}
-                      {% if test.is_active %}
-                        {% with selected=form.instance.individual_tests.all|default_if_none:"" %}
-                          <label class="test-chip {% if test in selected %}selected{% endif %}"
-                                 data-checkbox="test_{{ test.id }}">
-                            <input type="checkbox" class="d-none test-checkbox"
-                                   name="individual_tests" value="{{ test.id }}"
-                                   data-price="{{ test.price }}" id="test_{{ test.id }}"
-                                   {% if test in selected %}checked{% endif %}>
-                            {{ test.app_name }}
-                          </label>
-                        {% endwith %}
+                    {% if test.is_active %}
+                      <label class="test-chip" data-checkbox="test_{{ test.id }}">
+                        <input type="checkbox" class="d-none test-checkbox"
+                               name="individual_tests" value="{{ test.id }}"
+                               data-price="{{ test.price }}" id="test_{{ test.id }}">
+                        {{ test.app_name }}
+                      </label>
                       {% endif %}
                     {% endfor %}
                   </div>
@@ -81,18 +74,14 @@
             </h6>
             <div id="groups-container" class="chips-container">
               {% for group in form.test_groups.field.queryset %}
-                {% if group.is_active %}
-                  {% with selected_groups=form.instance.test_groups.all|default_if_none:"" %}
-                    <label class="test-chip {% if group in selected_groups %}selected{% endif %}"
-                           data-checkbox="group_{{ group.id }}">
-                      <input type="checkbox" class="d-none group-checkbox"
-                             name="test_groups" value="{{ group.id }}"
-                             data-price="{{ group.total_price }}" id="group_{{ group.id }}"
-                             {% if group in selected_groups %}checked{% endif %}>
-                      {{ group.name }}
-                    </label>
-                  {% endwith %}
-                {% endif %}
+              {% if group.is_active %}
+                <label class="test-chip" data-checkbox="group_{{ group.id }}">
+                  <input type="checkbox" class="d-none group-checkbox"
+                         name="test_groups" value="{{ group.id }}"
+                         data-price="{{ group.total_price }}" id="group_{{ group.id }}">
+                  {{ group.name }}
+                </label>
+              {% endif %}
               {% endfor %}
             </div>
           </div>
@@ -114,7 +103,7 @@
               <div id="price-breakdown">
                 <div class="price-item">
                   <span>التحاليل الفردية:</span>
-                  <span id="individual-total">0 دينار</span>
+                  <span id="individual-total">0 ينار</span>
                 </div>
                 <div class="price-item">
                   <span>مجموعات التحاليل:</span>
@@ -132,13 +121,13 @@
           <!-- الأزرار -->
           <div class="d-flex justify-content-between">
             <button type="submit" class="btn btn-primary">
-              <i class="fas fa-save me-1"></i>
-              {% if test_request %} تحديث الطلب {% else %} إنشاء الطلب {% endif %}
+              <i class="fas fa-save me-1"></i> إنشاء الطلب
             </button>
             <a href="{% url 'test_request_list' %}" class="btn btn-outline-secondary">
               <i class="fas fa-arrow-right me-1"></i> العودة للقائمة
             </a>
           </div>
+
         </form>
       </div>
     </div>
@@ -147,28 +136,35 @@
 
 <!-- CSS -->
 <style>
+/* صندوق رئيسي للتحاليل */
 #tests-container {
-  max-height: 450px;
-  overflow-y: auto;
+  max-height: 450px;       /* أقصى ارتفاع لكل التحاليل */
+  overflow-y: auto;        /* تمرير عمودي عند الحاجة */
   padding: 8px;
   border: 1px solid #e0e0e0;
   border-radius: 10px;
   background: #fafafa;
 }
+
+/* كل مجموعة وصف */
 .description-group {
   background: #fff;
   border: 1px solid #eee;
   border-radius: 8px;
   padding: 8px;
-  max-height: 160px;
-  overflow-y: auto;
+  max-height: 160px;       /* أقصى ارتفاع لكل مجموعة */
+  overflow-y: auto;        /* تمرير داخلي */
 }
+
+/* الحاوية الداخلية */
 .chips-container {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   padding: 6px;
 }
+
+/* شكل الاختيار (chip) */
 .test-chip {
   display: inline-block;
   padding: 6px 14px;
@@ -184,6 +180,8 @@
   color: white;
   border-color: #667eea;
 }
+
+/* كرت الأسعار */
 .price-summary-card {
   background: #f8f9fa;
   border: 1px solid #e9ecef;
@@ -217,9 +215,10 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     individualTotalEl.textContent = individualTotal + " دينار";
     groupsTotalEl.textContent = groupsTotal + " دينار";
-    grandTotalEl.innerHTML = "<strong>" + (individualTotal + groupsTotal) + " دينار</strong>";
+    grandTotalEl.innerHTML = "<strong>" + (individualTotal + groupsTotal) + " ريال</strong>";
   }
 
+  // تفعيل الاختيار عند الضغط على الكرت
   chips.forEach(chip => {
     chip.addEventListener("click", () => {
       const checkbox = document.getElementById(chip.dataset.checkbox);
@@ -229,7 +228,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // بحث بالاسم أو الوصف
+  // البحث
   document.getElementById("test-search").addEventListener("input", function () {
     const q = this.value.toLowerCase();
     document.querySelectorAll("#tests-container .description-group").forEach(group => {

@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+
+{% block title %}قائمة التحاليل - نظام تكنولاب إدارة المختبرات الطبية{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-vial me-2"></i>
+        قائمة التحاليل المتاحة
+    </h1>
+    <a href="/admin/lab/individualtest/add/" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i>
+        إضافة تحليل جديد
+    </a>
+</div>
+
+<div class="row">
+    <!-- التحاليل الفردية -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-flask me-2"></i>
+                    التحاليل الفردية
+                    <span class="badge bg-primary ms-2">{{ individual_tests.count }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if individual_tests %}
+                    <div class="test-grid">
+                        {% for test in individual_tests %}
+                        <div class="test-card">
+                            <div class="test-header">
+                                <h6 class="test-name">{{ test.name }}</h6>
+                                <span class="test-price">{{ test.price }} دينار</span>
+                            </div>
+                            
+                            {% if test.description %}
+                                <p class="test-description">{{ test.description|truncatewords:10 }}</p>
+                            {% endif %}
+                            
+                            <div class="test-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">الوحدة:</span>
+                                    <span class="detail-value">{{ test.unit }}</span>
+                                </div>
+                                
+                                {% if test.normal_value_min and test.normal_value_max %}
+                                    <div class="detail-item">
+                                        <span class="detail-label">القيم الطبيعية:</span>
+                                        <span class="detail-value">
+                                            {{ test.normal_value_min }} - {{ test.normal_value_max }} {{ test.unit }}
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="test-actions">
+                                <a href="/admin/lab/individualtest/{{ test.id }}/change/" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                    تعديل
+                                </a>
+                                <a href="{% url 'test_request_create' %}?test={{ test.id }}" 
+                                   class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-plus"></i>
+                                    طلب
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-flask fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">لا توجد تحاليل فردية</h6>
+                        <p class="text-muted">ابدأ بإضافة تحاليل فردية للنظام</p>
+                        <a href="/admin/lab/individualtest/add/" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>
+                            إضافة تحليل فردي
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- مجموعات التحاليل -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-layer-group me-2"></i>
+                    مجموعات التحاليل
+                    <span class="badge bg-success ms-2">{{ test_groups.count }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if test_groups %}
+                    <div class="test-grid">
+                        {% for group in test_groups %}
+                        <div class="test-card group-card">
+                            <div class="test-header">
+                                <h6 class="test-name">{{ group.name }}</h6>
+                                <span class="test-price group-price">{{ group.total_price }} دينار</span>
+                            </div>
+                            
+                            {% if group.description %}
+                                <p class="test-description">{{ group.description|truncatewords:10 }}</p>
+                            {% endif %}
+                            
+                            <div class="test-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">عدد التحاليل:</span>
+                                    <span class="detail-value">{{ group.tests.count }} تحليل</span>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <span class="detail-label">السعر الفردي:</span>
+                                    <span class="detail-value">{{ group.get_individual_price_sum }} دينار</span>
+                                </div>
+                                
+                                {% if group.get_individual_price_sum > group.total_price %}
+                                    <div class="detail-item">
+                                        <span class="detail-label text-success">توفير:</span>
+                                        <span class="detail-value text-success">
+                                            {{ group.get_individual_price_sum|floatformat:0|add:"-"|add:group.total_price|floatformat:0 }} ريال
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="included-tests">
+                                <small class="text-muted">التحاليل المتضمنة:</small>
+                                <div class="mt-1">
+                                    {% for test in group.tests.all|slice:":3" %}
+                                        <span class="badge bg-light text-dark me-1">{{ test.name }}</span>
+                                    {% endfor %}
+                                    {% if group.tests.count > 3 %}
+                                        <span class="badge bg-secondary">+{{ group.tests.count|add:"-3" }} أخرى</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="test-actions">
+                                <a href="/admin/lab/testgroup/{{ group.id }}/change/" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                    تعديل
+                                </a>
+                                <a href="{% url 'test_request_create' %}?group={{ group.id }}" 
+                                   class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-plus"></i>
+                                    طلب
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">لا توجد مجموعات تحاليل</h6>
+                        <p class="text-muted">ابدأ بإضافة مجموعات تحاليل للنظام</p>
+                        <a href="/admin/lab/testgroup/add/" class="btn btn-success">
+                            <i class="fas fa-plus me-1"></i>
+                            إضافة مجموعة تحاليل
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- معلومات إضافية -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="fas fa-info-circle me-2"></i>
+                    معلومات مهمة حول التحاليل
+                </h6>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="info-box">
+                            <i class="fas fa-flask text-primary"></i>
+                            <h6>التحاليل الفردية</h6>
+                            <p class="text-muted">تحاليل منفصلة يمكن طلبها بشكل مستقل</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-box">
+                            <i class="fas fa-layer-group text-success"></i>
+                            <h6>مجموعات التحاليل</h6>
+                            <p class="text-muted">مجموعة من التحاليل المترابطة بسعر مخفض</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-box">
+                            <i class="fas fa-chart-line text-info"></i>
+                            <h6>القيم الطبيعية</h6>
+                            <p class="text-muted">المعايير المرجعية لتفسير نتائج التحاليل</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.test-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.test-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.test-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border-color: #667eea;
+}
+
+.group-card {
+    border-left: 4px solid #28a745;
+}
+
+.test-header {
+    display: flex;
+    justify-content: between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.test-name {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0;
+    flex: 1;
+}
+
+.test-price {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-right: 10px;
+}
+
+.group-price {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.test-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+.test-details {
+    margin-bottom: 15px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.detail-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.detail-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.included-tests {
+    margin-bottom: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.test-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.info-box {
+    text-align: center;
+    padding: 20px;
+}
+
+.info-box i {
+    font-size: 2rem;
+    margin-bottom: 15px;
+}
+
+.info-box h6 {
+    margin-bottom: 10px;
+    color: #495057;
+}
+
+.info-box p {
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+</style>
+{% endblock %}
+

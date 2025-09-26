@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}قائمة طلبات التحاليل - نظام تكنولاب إدارة المختبرات الطبية{% endblock %}
+
+{% block content %}
+
+    <!-- زر طلب تحليل جديد -->
+    <!-- <a href="{% url 'test_request_create' %}" class="btn btn-success">
+        <i class="fas fa-plus me-1"></i>
+        طلب تحليل جديد
+    </a> -->
+
+ <div class="card shadow-sm mb-4">
+  <div class="card-body d-flex justify-content-between align-items-center">
+
+    <!-- شريط البحث -->
+    <form method="get" class="d-flex align-items-center" style="max-width: 450px; flex: 1;">
+      <div class="input-group">
+        <span class="input-group-text bg-white border-end-0">
+          <i class="fas fa-search text-muted"></i>
+        </span>
+        <input type="text" class="form-control border-start-0" name="search"
+               placeholder="ابحث بالاسم أو الباركود ..."
+               value="{{ search_query }}">
+        <button type="submit" class="btn btn-primary">
+          بحث
+        </button>
+      </div>
+    </form>
+
+    <!-- زر إضافة مريض جديد -->
+      <a href="{% url 'patient_create' %}" class="btn btn-primary">
+        <i class="fas fa-user-plus me-1"></i>
+        إضافة مريض جديد
+    </a>
+
+  </div>
+</div>
+<form method="post" action="{% url 'update_device_results' %}">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-primary">تحديث النتائج</button>
+</form>
+
+
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>المريض</th>
+                        <th>الباركود</th>
+                        <th>العمر</th>
+                        
+                        <th>تاريخ الطلب</th>
+                        <th>التحاليل المطلوبة</th>
+                        <!-- <th>الإجمالي</th> -->
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in page_obj %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><a href="{% url 'patient_detail' request.patient.id %}">{{ request.patient.full_name }}</a></td>
+                        <td>{{ request.patient.barcode }}</td>
+                        <td>{{ request.patient.age }}</td>
+                        <!-- <td>{{ request.patient.date_of_birth }}</td> -->
+                        <td>{{ request.request_date|date:"y/m/d H:i" }}</td>
+                        <td>
+                            {% for test in request.individual_tests.all %}
+                                <span class="badge bg-info text-dark">{{ test.app_name }}</span>
+                            {% empty %}
+                            {% endfor %}
+                            {% for group in request.test_groups.all %}
+                                <span class="badge bg-primary">{{ group.app_name }}</span>
+                            {% empty %}
+                            {% endfor %}
+                        </td>
+                        <!-- <td>{{ request.total_price }} دينار</td> -->
+                        <td>
+                            {% if request.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">قيد الانتظار</span>
+                            {% elif request.status == 'in_progress' %}
+                                <span class="badge bg-info text-dark">قيد التنفيذ</span>
+                            {% elif request.status == 'completed' %}
+                                <span class="badge bg-success">مكتملة</span>
+                            {% elif request.status == 'cancelled' %}
+                                <span class="badge bg-danger">ملغية</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'patient_report' request.patient.id %}" 
+                                class="btn btn-sm btn-outline-info" title="تقرير النتائج">
+                                <i class="fas fa-file-medical"></i>
+                            </a>
+                            <a href="{% url 'test_request_detail' request.id %}" class="btn btn-sm btn-outline-info" title="عرض التفاصيل">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'test_request_update' request.id %}" class="btn btn-sm btn-outline-primary" title="تعديل">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'test_request_delete' request.id %}" class="btn btn-sm btn-outline-danger" title="حذف">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">لا توجد طلبات تحاليل حتى الآن.</h6>
+                            <p class="text-muted">ابدأ بإضافة طلب تحليل جديد.</p>
+                            <!-- <a href="{% url 'test_request_create' %}" class="btn btn-success mt-2">
+                                <i class="fas fa-plus me-1"></i>
+                                إضافة طلب جديد
+                            </a> -->
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+          <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+                <nav aria-label="تنقل الصفحات" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+
+    </div>
+</div>
+{% endblock %}
+

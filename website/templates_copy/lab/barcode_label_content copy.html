@@ -2,8 +2,8 @@
 <div class="barcode-label">
     <!-- هيدر المختبر -->
     <div class="lab-header text-center mb-3">
-        <h6 class="mb-1">مختبر الحكيم الطبي</h6>
-        <small class="text-muted">Tel: +9647719361100 | Email: haderf119@gmail.com</small>
+        <h6 class="mb-1">مختبر الشفاء الطبي</h6>
+        <small class="text-muted">Tel: 966-11-1234567 | Email: info@shifa-lab.com</small>
     </div>
     
     <div class="row">
@@ -12,7 +12,7 @@
             <div class="patient-info">
                 <h6 class="patient-name">{{ patient.full_name }}</h6>
                 <div class="patient-details">
-                    <div><strong>الباركود:</strong> {{ patient.barcode }}</div>
+                    <div><strong>الهوية:</strong> {{ patient.national_id }}</div>
                     <div><strong>العمر:</strong> {{ patient.age }} سنة</div>
                     <div><strong>الجنس:</strong> {{ patient.get_gender_display }}</div>
                     <div><strong>الهاتف:</strong> {{ patient.phone_number }}</div>
@@ -22,7 +22,7 @@
             {% if label_data.test_info %}
             <div class="test-info mt-3">
                 <h6 class="text-primary">معلومات التحليل</h6>
-                <div><strong>رقم الطلب:</strong> {{ label_data.test_info.request_id|slice:":8" }}</div>
+                <div><strong>رقم الطلب:</strong> {{ label_data.test_info.request_id|slice:":8" }}...</div>
                 <div><strong>التاريخ:</strong> {{ label_data.test_info.request_date }}</div>
                 <div><strong>الحالة:</strong> {{ label_data.test_info.status }}</div>
                 
@@ -60,7 +60,12 @@
             </div>
             {% endif %}
             
-         
+            {% if label_data.linear_barcode %}
+            <div class="linear-barcode">
+                <img src="data:image/png;base64,{{ label_data.linear_barcode }}" 
+                     alt="Barcode" style="width: 100px; height: 30px;">
+            </div>
+            {% endif %}
         </div>
     </div>
     

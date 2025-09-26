@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block title %}قائمة المرضى - نظام تكنولاب إدارة المختبرات الطبية{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-users me-2"></i>
+        قائمة المرضى
+    </h1>
+    <a href="{% url 'patient_create' %}" class="btn btn-primary">
+        <i class="fas fa-user-plus me-1"></i>
+        إضافة مريض جديد
+    </a>
+</div>
+
+<!-- شريط البحث -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-10">
+                <input type="text" class="form-control" name="search" 
+                       placeholder="البحث بالاسم أو رقم الباركود ..." 
+                       value="{{ search_query }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-1"></i>
+                    بحث
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- <form method="post" action="{% url 'update_device_results' %}">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-primary">تحديث النتائج</button>
+</form> -->
+
+<!-- قائمة المرضى -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-list me-2"></i>
+            المرضى المسجلون
+            {% if search_query %}
+                <small class="text-muted">(نتائج البحث عن: "{{ search_query }}")</small>
+            {% endif %}
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>الاسم الكامل</th>
+                            <th>الباركود</th>
+                            <th>العمر</th>
+                            <th>الجنس</th>
+                            <th>رقم الهاتف</th>
+                            <th>تاريخ التسجيل</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in page_obj %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-3">
+                                        {% if patient.gender == 'M' %}
+                                            <i class="fas fa-male"></i>
+                                        {% else %}
+                                            <i class="fas fa-female"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ patient.full_name }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ patient.barcode }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ patient.age }} سنة</span>
+                            </td>
+                            <td>
+                                {% if patient.gender == 'M' %}
+                                    <span class="badge bg-primary">ذكر</span>
+                                {% else %}
+                                    <span class="badge bg-pink">أنثى</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ patient.phone_number|default_if_none:"" }}</td>
+                            <td>
+                                <div>{{ patient.created_at|date:"Y/m/d" }}</div>
+                                <small class="text-muted">{{ patient.created_at|time:"H:i" }}</small>
+                            </td>
+
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'patient_detail' patient.id %}" 
+                                       class="btn btn-sm btn-outline-primary" title="عرض التفاصيل">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'patient_report' patient.id %}" 
+                                       class="btn btn-sm btn-outline-info" title="تقرير النتائج">
+                                        <i class="fas fa-file-medical"></i>
+                                    </a>
+                                    <a href="{% url 'patient_edit' patient.id %}" 
+                                       class="btn btn-sm btn-outline-warning" title="تعديل">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <!-- <a href="{% url 'test_request_create' %}?patient={{ patient.id }}" 
+                                       class="btn btn-sm btn-outline-success" title="طلب تحليل">
+                                        <i class="fas fa-vial"></i>
+                                    </a> -->
+                                    <!-- إضافة في قسم الإجراءات -->
+                                    <a href="{% url 'patient_barcode_label' patient.id %}" 
+                                    class="btn btn-sm btn-info" title="ملصق الباركود">
+                                        <i class="fas fa-qrcode"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+                <nav aria-label="تنقل الصفحات" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                {% if search_query %}
+                    <h5 class="text-muted">لم يتم العثور على نتائج</h5>
+                    <p class="text-muted">لا توجد مرضى تطابق معايير البحث "{{ search_query }}"</p>
+                    <a href="{% url 'patient_list' %}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-list me-1"></i>
+                        عرض جميع المرضى
+                    </a>
+                {% else %}
+                    <h5 class="text-muted">لا يوجد مرضى مسجلون</h5>
+                    <p class="text-muted">ابدأ بإضافة مريض جديد للنظام</p>
+                {% endif %}
+                <a href="{% url 'patient_create' %}" class="btn btn-primary">
+                    <i class="fas fa-user-plus me-1"></i>
+                    إضافة مريض جديد
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.bg-pink {
+    background-color: #e91e63 !important;
+}
+</style>
+{% endblock %}
+

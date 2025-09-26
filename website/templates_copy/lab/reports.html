@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}التقارير والإحصائيات - نظام تكنو إدارة المختبرات الطبية{% endblock %}
+{% block title %}التقارير والإحصائيات - نظام تكنولاب إدارة المختبرات الطبية{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -20,11 +20,11 @@
 <form method="get" class="row g-3 mb-4">
     <div class="col-md-4">
         <label for="start_date" class="form-label">من تاريخ</label>
-        <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control">
+        <input type="date" id="start_date" name="start_date" value="{{ request.GET.start_date }}" class="form-control">
     </div>
     <div class="col-md-4">
         <label for="end_date" class="form-label">إلى تاريخ</label>
-        <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="form-control">
+        <input type="date" id="end_date" name="end_date" value="{{ request.GET.end_date }}" class="form-control">
     </div>
     <div class="col-md-4 d-flex align-items-end">
         <button type="submit" class="btn btn-primary w-100">
@@ -32,6 +32,7 @@
         </button>
     </div>
 </form>
+
 <!-- الإحصائيات العامة -->
 <div class="row mb-4">
     <div class="col-lg-3 col-md-6 mb-3">
@@ -98,22 +99,6 @@
         </div>
     </div>
 </div>
-<!-- الإحصائيات العامة -->
-<div class="row mb-4">
-    {% for card in cards %}
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card shadow-sm" style="background: {{ card.bg }}; color: {{ card.color }}; border-radius:12px;">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <h3 class="mb-1">{{ card.number }}</h3>
-                    <small>{{ card.label }}</small>
-                </div>
-                <i class="fas fa-{{ card.icon }} fa-2x opacity-75"></i>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-</div>
 
 <div class="row">
     <!-- إحصائيات الحالات -->
@@ -129,27 +114,26 @@
                 <div class="chart-container">
                     <canvas id="statusChart" width="400" height="200"></canvas>
                 </div>
+                
                 <div class="status-legend mt-3">
                     {% for stat in status_stats %}
-                    <div class="legend-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="legend-color" style="display:inline-block;width:15px;height:15px;background:
-                            {% if stat.status == 'pending' %}#ffc107{% elif stat.status == 'in_progress' %}#17a2b8
-                            {% elif stat.status == 'completed' %}#28a745{% elif stat.status == 'cancelled' %}#dc3545{% endif %}; margin-right:5px;"></span>
+                    <div class="legend-item">
+                        <span class="legend-color status-{{ stat.status }}"></span>
+                        <span class="legend-label">
                             {% if stat.status == 'pending' %}قيد الانتظار
                             {% elif stat.status == 'in_progress' %}قيد التنفيذ
                             {% elif stat.status == 'completed' %}مكتملة
                             {% elif stat.status == 'cancelled' %}ملغية
                             {% endif %}
-                        </div>
-                        <div>{{ stat.count }}</div>
+                        </span>
+                        <span class="legend-value">{{ stat.count }}</span>
                     </div>
                     {% endfor %}
                 </div>
             </div>
         </div>
     </div>
-
+    
     <!-- أكثر التحاليل طلباً -->
     <div class="col-lg-6 mb-4">
         <div class="card">
@@ -161,28 +145,31 @@
             </div>
             <div class="card-body">
                 {% if popular_tests %}
-                <div class="popular-tests-list">
-                    {% for test in popular_tests %}
-                    <div class="popular-test-item mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <div><strong>{{ forloop.counter }}. {{ test.name }}</strong></div>
-                            <div>{{ test.request_count }} طلب</div>
-                        </div>
-                        <div class="progress" style="height: 20px;">
-                            <div class="progress-bar" role="progressbar" style="width: {% widthratio test.request_count popular_tests.0.request_count 100 %}%"
-                                aria-valuenow="{{ test.request_count }}" aria-valuemin="0" aria-valuemax="{{ popular_tests.0.request_count }}">
-                                {{ test.price }} دينار
+                    <div class="popular-tests-list">
+                        {% for test in popular_tests %}
+                        <div class="popular-test-item">
+                            <div class="test-rank">{{ forloop.counter }}</div>
+                            <div class="test-details">
+                                <div class="test-name">{{ test.name }}</div>
+                                <div class="test-stats">
+                                    <span class="test-count">{{ test.request_count }} طلب</span>
+                                    <span class="test-price">{{ test.price }} ريال</span>
+                                </div>
+                            </div>
+                            <div class="test-progress">
+                                <div class="progress">
+                                    <div class="progress-bar" style="width: {% widthratio test.request_count popular_tests.0.request_count 100 %}%"></div>
+                                </div>
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                </div>
                 {% else %}
-                <div class="text-center py-4">
-                    <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
-                    <h6 class="text-muted">لا توجد بيانات كافية</h6>
-                    <p class="text-muted">ابدأ بإضافة طلبات تحاليل لعرض الإحصائيات</p>
-                </div>
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">لا توجد بيانات كافية</h6>
+                        <p class="text-muted">ابدأ بإضافة طلبات تحاليل لعرض الإحصائيات</p>
+                    </div>
                 {% endif %}
             </div>
         </div>
@@ -194,7 +181,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('statusChart').getContext('2d');
-
+    
     const statusData = [
         {% for stat in status_stats %}
         {
@@ -204,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         {% endfor %}
     ];
-
+    
     new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -212,8 +199,8 @@ document.addEventListener('DOMContentLoaded', function() {
             datasets: [{
                 data: statusData.map(item => item.value),
                 backgroundColor: statusData.map(item => item.color),
-                borderColor: '#fff',
-                borderWidth: 2
+                borderWidth: 2,
+                borderColor: '#fff'
             }]
         },
         options: {
@@ -227,9 +214,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-
 {% endblock %}
-
-
-
-

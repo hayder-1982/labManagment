@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if existing_result %}تعديل نتيجة تحليل{% else %}إضافة نتيجة تحليل{% endif %} - نظام تكنولاب إدارة المختبرات الطبية
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-flask me-2"></i>
+        {% if existing_result %}تعديل نتيجة تحليل{% else %}إضافة نتيجة تحليل{% endif %}
+    </h1>
+    <div>
+        <a href="{% url 'test_request_detail' test_request.id %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-1"></i>
+            العودة لطلب التحليل
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            معلومات التحليل
+        </h5>
+    </div>
+    <div class="card-body">
+        <p><strong>طلب التحليل:</strong> <a href="{% url 'test_request_detail' test_request.id %}">#{{ test_request.id|stringformat:"s"|slice:":8" }}</a> للمريض <a href="{% url 'patient_detail' test_request.patient.id %}">{{ test_request.patient.full_name }}</a></p>
+        <p><strong>التحليل:</strong> {{ individual_test.name }}</p>
+        <p><strong>الوحدة:</strong> {{ individual_test.unit }}</p>
+        <p><strong>القيم الطبيعية:</strong> {{ individual_test.normal_value_min }} - {{ individual_test.normal_value_max }} {{ individual_test.unit }}</p>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            {% for field in form %}
+                <div class="mb-3">
+                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <div class="form-text">{{ field.help_text }}</div>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <div class="invalid-feedback d-block">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-1"></i>
+                حفظ النتيجة
+            </button>
+            <a href="{% url 'test_request_detail' test_request.id %}" class="btn btn-secondary">
+                <i class="fas fa-times me-1"></i>
+                إلغاء
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

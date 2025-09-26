@@ -28,6 +28,8 @@ DO UPDATE SET
 <!-- INSERT INTO lab_deviceresult (device_name, result, barcode_id, test_id, insert_datetime, is_active)
 VALUES ('swelab', 5.5, 2509161794, 1, CURRENT_TIMESTAMP, 1); -->
 
+ <!-- INSERT INTO techlab.lab_deviceresult (device_name, result, barcode_id, test_id, insert_datetime, is_active)
+ VALUES ('swelab', 95.5, 2509229500, 24, CURRENT_TIMESTAMP, 1); -->
 
 ## Contact
 

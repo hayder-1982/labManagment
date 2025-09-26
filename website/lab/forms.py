@@ -16,6 +16,22 @@ class PatientForm(forms.ModelForm):
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'العنوان'}),
         }
 
+# class TestRequestForm(forms.ModelForm):
+#     class Meta:
+#         model = TestRequest
+#         fields = ['patient', 'individual_tests', 'test_groups', 'notes']
+#         widgets = {
+#             'patient': forms.Select(attrs={'class': 'form-select'}),
+#             'individual_tests': forms.CheckboxSelectMultiple(),
+#             'test_groups': forms.CheckboxSelectMultiple(),
+#             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'ملاحظات إضافية'}),
+#         }
+
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.fields['individual_tests'].queryset = IndividualTest.objects.filter(is_active=True)
+#         self.fields['test_groups'].queryset = TestGroup.objects.filter(is_active=True)
+
 class TestRequestForm(forms.ModelForm):
     class Meta:
         model = TestRequest
@@ -29,8 +45,16 @@ class TestRequestForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['individual_tests'].queryset = IndividualTest.objects.filter(is_active=True)
-        self.fields['test_groups'].queryset = TestGroup.objects.filter(is_active=True)
+
+        # فلترة التحاليل والمجموعات النشطة فقط
+        self.fields['individual_tests'].queryset = IndividualTest.objects.filter(is_active=True).order_by('description', 'name')
+        self.fields['test_groups'].queryset = TestGroup.objects.filter(is_active=True).order_by('name')
+
+        # ✅ إذا الفورم في وضع تعديل (instance موجودة)
+        if self.instance and self.instance.pk:
+            self.fields['individual_tests'].initial = self.instance.individual_tests.all()
+            self.fields['test_groups'].initial = self.instance.test_groups.all()
+
 
 class IndividualTestResultForm(forms.ModelForm):
     class Meta:

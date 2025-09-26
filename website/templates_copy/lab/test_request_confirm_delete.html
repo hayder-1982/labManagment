@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}تأكيد حذف طلب التحليل - نظام تكنولاب إدارة المختبرات الطبية{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-trash-alt me-2"></i>
+        تأكيد حذف طلب التحليل
+    </h1>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <p class="lead text-center">
+            هل أنت متأكد أنك تريد حذف طلب التحليل رقم <strong>#{{ test_request.id|stringformat:"s"|slice:":8" }}</strong> للمريض <strong>{{ test_request.patient.full_name }}</strong>؟
+        </p>
+        <p class="text-danger text-center">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            لا يمكن التراجع عن هذا الإجراء.
+        </p>
+        
+        <form method="post" class="text-center mt-4">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger me-2">
+                <i class="fas fa-trash me-1"></i>
+                تأكيد الحذف
+            </button>
+            <a href="{% url 'test_request_detail' test_request.id %}" class="btn btn-secondary">
+                <i class="fas fa-times me-1"></i>
+                إلغاء
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

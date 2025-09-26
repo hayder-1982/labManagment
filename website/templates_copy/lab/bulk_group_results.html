@@ -65,7 +65,7 @@ input[type="number"] { width: 100px; }
                                                 <i class="fas fa-user-edit"></i>
                                                 Entered by:
                                                 <strong>{{ test_field.existing_result.entered_by.username }}</strong>
-                                                
+                                                <br>
                                                 {{ test_field.existing_result.result_date|date:"Y/m/d H:i" }}
                                             </div>
                                         {% endif %}
@@ -75,8 +75,8 @@ input[type="number"] { width: 100px; }
                                                 <i class="fas fa-history"></i>
                                                 Last modified by:
                                                 <strong>{{ test_field.existing_result.last_modified_by.username }}</strong>
-                                                
-                                                {{ test_field.existing_result.updated_at|date:"Y/m/d H:i" }}
+                                                <br>
+                                                {{ test_field.existing_result.last_modified_at|date:"Y/m/d H:i" }}
                                             </div>
                                         {% endif %}
                                     {% else %}
